@@ -1,12 +1,13 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
-	"github.com/jonhadfield/gosn-v2"
 	"io/ioutil"
 	"log"
 	"os"
 	"time"
+
+	"github.com/jonhadfield/gosn-v2"
 )
 
 func compare(remote tagsWithNotes, home string, paths, exclude []string, debug bool) (diffs []ItemDiff, err error) {

@@ -1,14 +1,15 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
-	"github.com/jonhadfield/gosn-v2"
-	"github.com/jonhadfield/gosn-v2/cache"
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -46,7 +47,7 @@ func TestSyncNoItems(t *testing.T) {
 		Debug:   true,
 	}, true)
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "no remote dotfiles found")
+	assert.Contains(t, err.Error(), "no remote sync found")
 	assert.Equal(t, 0, so.NoPushed)
 	assert.Equal(t, 0, so.NoPulled)
 }
@@ -139,7 +140,7 @@ func TestSyncTwoFilesUpdatedFiles(t *testing.T) {
 	require.Equal(t, so.NoPushed, 2)
 }
 
-// TestSync creates local dotfiles
+// TestSync creates local sync
 func TestSync(t *testing.T) {
 	assert.NotEmpty(t, testCacheSession.AccessToken)
 	defer func() {
@@ -149,12 +150,12 @@ func TestSync(t *testing.T) {
 	}()
 	home := getTemporaryHome()
 
-	fruitTag := createTag("dotfiles.fruit")
-	bananaTag := createTag("dotfiles.fruit.banana")
-	carsTag := createTag("dotfiles.cars")
-	vwTag := createTag("dotfiles.cars.vw")
-	mercedesTag := createTag("dotfiles.cars.mercedes")
-	a250Tag := createTag("dotfiles.cars.mercedes.a250")
+	fruitTag := createTag("sync.fruit")
+	bananaTag := createTag("sync.fruit.banana")
+	carsTag := createTag("sync.cars")
+	vwTag := createTag("sync.cars.vw")
+	mercedesTag := createTag("sync.cars.mercedes")
+	a250Tag := createTag("sync.cars.mercedes.a250")
 	appleNote := createNote("apple", "apple content")
 	yellowNote := createNote("yellow", "yellow content")
 	golfNote := createNote("golf.txt", "golf content")
@@ -230,7 +231,7 @@ func TestSync(t *testing.T) {
 	updateTime := time.Now().UTC().Add(time.Minute * 10)
 	var uTwn tagsWithNotes
 	for _, x := range twn {
-		if x.tag.Content.GetTitle() == "dotfiles.fruit" {
+		if x.tag.Content.GetTitle() == "sync.fruit" {
 			var nnotes gosn.Notes
 			for _, note := range x.notes {
 				if note.Content.GetTitle() == "apple" {
@@ -284,12 +285,12 @@ func TestSyncWithExcludeAbsolutePaths(t *testing.T) {
 	}()
 	home := getTemporaryHome()
 
-	fruitTag := createTag("dotfiles.fruit")
-	bananaTag := createTag("dotfiles.fruit.banana")
-	carsTag := createTag("dotfiles.cars")
-	vwTag := createTag("dotfiles.cars.vw")
-	mercedesTag := createTag("dotfiles.cars.mercedes")
-	a250Tag := createTag("dotfiles.cars.mercedes.a250")
+	fruitTag := createTag("sync.fruit")
+	bananaTag := createTag("sync.fruit.banana")
+	carsTag := createTag("sync.cars")
+	vwTag := createTag("sync.cars.vw")
+	mercedesTag := createTag("sync.cars.mercedes")
+	a250Tag := createTag("sync.cars.mercedes.a250")
 	appleNote := createNote("apple", "apple content")
 	yellowNote := createNote("yellow", "yellow content")
 	golfNote := createNote("golf.txt", "golf content")
@@ -338,12 +339,12 @@ func TestSyncWithExcludeParentPaths(t *testing.T) {
 
 	home := getTemporaryHome()
 
-	fruitTag := createTag("dotfiles.fruit")
-	bananaTag := createTag("dotfiles.fruit.banana")
-	carsTag := createTag("dotfiles.cars")
-	vwTag := createTag("dotfiles.cars.vw")
-	mercedesTag := createTag("dotfiles.cars.mercedes")
-	a250Tag := createTag("dotfiles.cars.mercedes.a250")
+	fruitTag := createTag("sync.fruit")
+	bananaTag := createTag("sync.fruit.banana")
+	carsTag := createTag("sync.cars")
+	vwTag := createTag("sync.cars.vw")
+	mercedesTag := createTag("sync.cars.mercedes")
+	a250Tag := createTag("sync.cars.mercedes.a250")
 	appleNote := createNote("apple", "apple content")
 	yellowNote := createNote("yellow", "yellow content")
 	golfNote := createNote("golf.txt", "golf content")

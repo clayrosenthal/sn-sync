@@ -1,12 +1,13 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/briandowns/spinner"
 	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
-	"os"
-	"time"
 )
 
 func WipeDotfileTagsAndNotes(session *cache.Session, pageSize int, useStdErr bool) (int, error) {

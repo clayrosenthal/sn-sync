@@ -1,17 +1,18 @@
-package sndotfiles
+package snsync
 
 import (
 	"errors"
 	"fmt"
-	"github.com/briandowns/spinner"
-	"github.com/jonhadfield/findexec"
-	"github.com/jonhadfield/gosn-v2"
-	"github.com/jonhadfield/gosn-v2/cache"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/briandowns/spinner"
+	"github.com/jonhadfield/findexec"
+	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/cache"
 )
 
 const (
@@ -84,7 +85,7 @@ func diff(twn tagsWithNotes, home string, paths []string, debug bool) (diffs []I
 	}
 
 	if len(twn) == 0 {
-		msg = "no dotfiles being tracked"
+		msg = "no sync being tracked"
 		return
 	}
 
@@ -141,8 +142,8 @@ func processContentDiffs(diffs []ItemDiff, tempDir, diffBinary string) (differen
 			var f1, f2 *os.File
 
 			uuid := gosn.GenUUID()
-			f1path := fmt.Sprintf("%ssn-dotfiles-compare-%s-f1", tempDir, uuid)
-			f2path := fmt.Sprintf("%ssn-dotfiles-compare-%s-f2", tempDir, uuid)
+			f1path := fmt.Sprintf("%ssn-sync-compare-%s-f1", tempDir, uuid)
+			f2path := fmt.Sprintf("%ssn-sync-compare-%s-f2", tempDir, uuid)
 
 			f1, err = os.Create(f1path)
 			if err != nil {

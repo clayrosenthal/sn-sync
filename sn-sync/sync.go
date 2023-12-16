@@ -1,15 +1,16 @@
-package sndotfiles
+package snsync
 
 import (
 	"errors"
 	"fmt"
+	"os"
+	"strings"
+	"time"
+
 	"github.com/asdine/storm/v3"
 	"github.com/briandowns/spinner"
 	"github.com/fatih/color"
 	"github.com/jonhadfield/gosn-v2/cache"
-	"os"
-	"strings"
-	"time"
 
 	"github.com/ryanuber/columnize"
 )
@@ -99,7 +100,7 @@ func sync(input syncInput) (output syncOutput, err error) {
 		return
 	}
 
-	// TODO: Check every editor component and ensure no dotfiles are associated (ensure plain text editor)
+	// TODO: Check every editor component and ensure no sync are associated (ensure plain text editor)
 
 	// persist changes
 	csi.Close = true
@@ -129,7 +130,7 @@ func syncDBwithFS(si syncInput) (so syncOutput, err error) {
 	itemDiffs, err = compare(si.twn, si.home, si.paths, si.exclude, si.debug)
 	if err != nil {
 		if strings.Contains(err.Error(), "tags with notes not supplied") {
-			err = errors.New("no remote dotfiles found")
+			err = errors.New("no remote sync found")
 		}
 
 		return

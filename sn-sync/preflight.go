@@ -1,11 +1,12 @@
-package sndotfiles
+package snsync
 
 import (
 	"errors"
 	"fmt"
-	"github.com/fatih/set"
 	"path/filepath"
 	"strings"
+
+	"github.com/fatih/set"
 )
 
 // preflight validates and tidies up the home directory and paths provided

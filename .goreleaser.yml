@@ -1,4 +1,4 @@
-project_name: sn-dotfiles
+project_name: sn-sync
 
 env:
   - GO111MODULE=on
@@ -63,9 +63,9 @@ builds:
     ldflags:
       - "-s -w -X main.version={{ .Version }} -X main.sha={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.tag={{ .Tag }}"
 
-  - id: sn-dotfiles
-    main: ./cmd/sn-dotfiles/
-    binary: sn-dotfiles
+  - id: sn-sync
+    main: ./cmd/sn-sync/
+    binary: sn-sync
     goos:
       - linux
       - freebsd
@@ -89,7 +89,7 @@ archives:
       386: i386
       amd64: x86_64
     builds:
-      - sn-dotfiles
+      - sn-sync
     format: tar.gz
     files:
       - none*
@@ -97,11 +97,11 @@ archives:
 release:
   github:
     owner: jonhadfield
-    name: sn-dotfiles
+    name: sn-sync
   prerelease: auto
   name_template: '{{ .Tag }}'
   extra_files:
-    - glob: ./dist/sn-dotfiles_Darwin*.zip
+    - glob: ./dist/sn-sync_Darwin*.zip
 
 announce:
   skip: true
@@ -119,5 +119,5 @@ changelog:
 
 checksum:
   extra_files:
-    - glob: ./dist/sn-dotfiles_Darwin*.zip
+    - glob: ./dist/sn-sync_Darwin*.zip
   name_template: 'checksums.txt'

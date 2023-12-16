@@ -1,18 +1,19 @@
-package sndotfiles
+package snsync
 
 import (
 	"errors"
 	"fmt"
-	"github.com/asdine/storm/v3"
-	"github.com/briandowns/spinner"
-	"github.com/jonhadfield/gosn-v2"
-	"github.com/jonhadfield/gosn-v2/cache"
-	"github.com/ryanuber/columnize"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/asdine/storm/v3"
+	"github.com/briandowns/spinner"
+	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/ryanuber/columnize"
 )
 
 // Add tracks local Paths by pushing the local dir as a tag representation and the filename as a note title
@@ -140,8 +141,8 @@ func add(db *storm.DB, ai AddInput, noRecurse bool) (ao AddOutput, err error) {
 	}
 	// add DotFilesTag tag if missing
 	_, dotFilesTagInTagToItemMap := tagToItemMap[DotFilesTag]
-	if !tagExists("dotfiles", ai.Twn) && !dotFilesTagInTagToItemMap {
-		debugPrint(ai.Session.Debug, "Add | adding missing dotfiles tag")
+	if !tagExists("sync", ai.Twn) && !dotFilesTagInTagToItemMap {
+		debugPrint(ai.Session.Debug, "Add | adding missing sync tag")
 
 		tagToItemMap[DotFilesTag] = gosn.Items{}
 	}
@@ -259,7 +260,6 @@ func getLocalFSPaths(paths []string, noRecurse bool) (finalPaths []string, err e
 	return finalPaths, err
 }
 
-//
 func createItem(path, title string) (item gosn.Note, err error) {
 	// read file content
 	var file *os.File

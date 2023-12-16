@@ -1,17 +1,18 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
-	"github.com/asdine/storm/v3"
-	"github.com/jonhadfield/gosn-v2"
-	"github.com/jonhadfield/gosn-v2/cache"
-	"github.com/pkg/errors"
 	"log"
 	"os"
 	"path/filepath"
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/asdine/storm/v3"
+	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/pkg/errors"
 )
 
 func debugPrint(show bool, msg string) {
@@ -344,7 +345,7 @@ func findEmptyTags(twn tagsWithNotes, deletedNotes gosn.Notes, debug bool) gosn.
 
 	tagsToRemove = dedupe(tagsToRemove)
 
-	// now removeFromDB dotfiles tag if it has no children
+	// now removeFromDB sync tag if it has no children
 	debugPrint(debug, fmt.Sprintf("findEmptyTags | tagsToRemove: %s", tagsToRemove))
 	debugPrint(debug, fmt.Sprintf("findEmptyTags | allDotfileChildTags: %s", allDotfileChildTags))
 
@@ -514,7 +515,7 @@ func tagTitleToFSDir(title, home string) (path string, err error) {
 }
 
 func pathToTag(homeRelPath string) string {
-	// prepend dotfiles path
+	// prepend sync path
 	r := DotFilesTag + homeRelPath
 	// replace path separators with dots
 	r = strings.ReplaceAll(r, string(os.PathSeparator), ".")

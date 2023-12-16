@@ -1,12 +1,13 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
-	"github.com/jonhadfield/gosn-v2"
 	"io/ioutil"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/jonhadfield/gosn-v2"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -14,16 +15,16 @@ import (
 func TestStatusEmptyTWN(t *testing.T) {
 	home := getTemporaryHome()
 	_, msg, _ := status(tagsWithNotes{}, home, []string{}, true)
-	assert.Equal(t, "no dotfiles being tracked", msg)
+	assert.Equal(t, "no sync being tracked", msg)
 }
 
 func testStatusSetup() (twn tagsWithNotes) {
-	dotfilesTag := createTag("dotfiles")
+	syncTag := createTag("sync")
 	gitconfigNote := createNote(".gitconfig", "git config content")
-	dotfilesTagWithNote := tagWithNotes{tag: dotfilesTag, notes: gosn.Notes{gitconfigNote}}
+	syncTagWithNote := tagWithNotes{tag: syncTag, notes: gosn.Notes{gitconfigNote}}
 
-	fruitTag := createTag("dotfiles.fruit")
-	fruitBananaTag := createTag("dotfiles.fruit.banana")
+	fruitTag := createTag("sync.fruit")
+	fruitBananaTag := createTag("sync.fruit.banana")
 	appleNote := createNote("apple", "apple content")
 	lemonNote := createNote("lemon", "lemon content")
 	grapeNote := createNote("grape", "grape content")
@@ -33,10 +34,10 @@ func testStatusSetup() (twn tagsWithNotes) {
 	fruitBananaTagWithNotes := tagWithNotes{tag: fruitBananaTag, notes: gosn.Notes{yellowNote}}
 
 	premiumNote := createNote("premium", "premium content")
-	carsMercedesA250Tag := createTag("dotfiles.cars.mercedes.a250")
+	carsMercedesA250Tag := createTag("sync.cars.mercedes.a250")
 	carsMercedesA250TagWithNotes := tagWithNotes{tag: carsMercedesA250Tag, notes: gosn.Notes{premiumNote}}
 
-	twn = tagsWithNotes{dotfilesTagWithNote, fruitTagWithNotes, fruitBananaTagWithNotes, carsMercedesA250TagWithNotes}
+	twn = tagsWithNotes{syncTagWithNote, fruitTagWithNotes, fruitBananaTagWithNotes, carsMercedesA250TagWithNotes}
 	return
 }
 
@@ -101,15 +102,15 @@ func TestStatus1(t *testing.T) {
 
 	assert.NoError(t, createTemporaryFiles(fwc))
 
-	dotfilesTag := createTag("dotfiles")
+	syncTag := createTag("sync")
 	gitconfigNote := createNote(".gitconfig", "git config content")
-	dotfilesTagWithNote := tagWithNotes{tag: dotfilesTag, notes: gosn.Notes{gitconfigNote}}
+	syncTagWithNote := tagWithNotes{tag: syncTag, notes: gosn.Notes{gitconfigNote}}
 
-	awsTag := createTag("dotfiles.aws")
+	awsTag := createTag("sync.aws")
 	awsConfigNote := createNote("config", "aws config content")
 	awsTagWithNotes := tagWithNotes{tag: awsTag, notes: gosn.Notes{awsConfigNote}}
 
-	twn := tagsWithNotes{dotfilesTagWithNote, awsTagWithNotes}
+	twn := tagsWithNotes{syncTagWithNote, awsTagWithNotes}
 
 	diffs, _, err := status(twn, home, []string{gitConfigPath}, true)
 	assert.NoError(t, err)
@@ -134,12 +135,12 @@ func TestStatus2(t *testing.T) {
 	fwc[premiumPath] = "premium content"
 	assert.NoError(t, createTemporaryFiles(fwc))
 
-	dotfilesTag := createTag("dotfiles")
+	syncTag := createTag("sync")
 	gitconfigNote := createNote(".gitconfig", "git config content")
-	dotfilesTagWithNote := tagWithNotes{tag: dotfilesTag, notes: gosn.Notes{gitconfigNote}}
+	syncTagWithNote := tagWithNotes{tag: syncTag, notes: gosn.Notes{gitconfigNote}}
 
-	fruitTag := createTag("dotfiles.fruit")
-	fruitBananaTag := createTag("dotfiles.fruit.banana")
+	fruitTag := createTag("sync.fruit")
+	fruitBananaTag := createTag("sync.fruit.banana")
 	appleNote := createNote("apple", "apple content")
 	fruitTagWithNotes := tagWithNotes{tag: fruitTag, notes: gosn.Notes{appleNote}}
 
@@ -147,10 +148,10 @@ func TestStatus2(t *testing.T) {
 	fruitBananaTagWithNotes := tagWithNotes{tag: fruitBananaTag, notes: gosn.Notes{yellowNote}}
 
 	premiumNote := createNote("premium", "premium content")
-	carsMercedesA250Tag := createTag("dotfiles.cars.mercedes.a250")
+	carsMercedesA250Tag := createTag("sync.cars.mercedes.a250")
 	carsMercedesA250TagWithNotes := tagWithNotes{tag: carsMercedesA250Tag, notes: gosn.Notes{premiumNote}}
 
-	twn := tagsWithNotes{dotfilesTagWithNote, fruitTagWithNotes, fruitBananaTagWithNotes, carsMercedesA250TagWithNotes}
+	twn := tagsWithNotes{syncTagWithNote, fruitTagWithNotes, fruitBananaTagWithNotes, carsMercedesA250TagWithNotes}
 
 	var err error
 
@@ -173,7 +174,7 @@ func TestStatus2(t *testing.T) {
 	// update premium remote to trigger remote newer condition
 	newPremiumNote := createNote("premium", "new content")
 	newCarsMercedesA250TagWithNotes := tagWithNotes{tag: carsMercedesA250Tag, notes: gosn.Notes{newPremiumNote}}
-	twn = tagsWithNotes{dotfilesTagWithNote, fruitTagWithNotes, fruitBananaTagWithNotes, newCarsMercedesA250TagWithNotes}
+	twn = tagsWithNotes{syncTagWithNote, fruitTagWithNotes, fruitBananaTagWithNotes, newCarsMercedesA250TagWithNotes}
 
 	var diffs []ItemDiff
 

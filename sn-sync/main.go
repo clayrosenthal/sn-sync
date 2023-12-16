@@ -1,21 +1,22 @@
-package sndotfiles
+package snsync
 
 import (
 	"errors"
 	"fmt"
+	"regexp"
+
 	"github.com/asdine/storm/v3"
 	"github.com/asdine/storm/v3/q"
 	"github.com/fatih/color"
 	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
-	"regexp"
 )
 
 const (
 	// SNServerURL defines the default URL for making calls to syncDBwithFS with SN
 	SNServerURL = "https://syncDBwithFS.standardnotes.org"
 	// DotFilesTag defines the default tag that all SN Dotfiles will be prefixed with
-	DotFilesTag = "dotfiles"
+	DotFilesTag = "sync"
 	// DefaultPageSize defines the number of items to attempt to syncDBwithFS per request
 	DefaultPageSize = 500
 	// SpinnerCharSet defines the characters to use for the spinner shown when syncing
@@ -23,7 +24,7 @@ const (
 	// SpinnerDelay defines the number of milliseconds to wait between each character in the spinner
 	SpinnerDelay = 100
 
-	SNAppName = "sn-dotfiles"
+	SNAppName = "sn-sync"
 )
 
 var (
@@ -89,7 +90,6 @@ func getTagsWithNotes(db *storm.DB, session *cache.Session) (t tagsWithNotes, er
 	return t, err
 }
 
-//
 func getItemNoteRefIds(itemRefs gosn.ItemReferences) (refIds []string) {
 	for _, ir := range itemRefs {
 		if ir.ContentType == "Note" {
@@ -100,7 +100,6 @@ func getItemNoteRefIds(itemRefs gosn.ItemReferences) (refIds []string) {
 	return refIds
 }
 
-//
 type tagWithNotes struct {
 	tag   gosn.Tag
 	notes gosn.Notes

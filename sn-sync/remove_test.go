@@ -1,12 +1,13 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
+	"regexp"
+	"testing"
+
 	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
 	"github.com/stretchr/testify/require"
-	"regexp"
-	"testing"
 )
 
 func TestRemoveNoItems(t *testing.T) {
@@ -464,7 +465,7 @@ func TestRemoveAndCheckRemovedOne(t *testing.T) {
 	ai := AddInput{Session: testCacheSession, Home: home, Paths: []string{gitConfigPath, awsConfigPath, acmeConfigPath}}
 	ao, err := Add(ai, true)
 	require.NoError(t, err)
-	// dotfiles tag, .gitconfig, and acmeConfig should exist
+	// sync tag, .gitconfig, and acmeConfig should exist
 	require.Len(t, ao.PathsAdded, 3)
 	require.Len(t, ao.PathsExisting, 0)
 
@@ -489,7 +490,7 @@ func TestRemoveAndCheckRemovedOne(t *testing.T) {
 	require.NoError(t, err)
 
 	twn, _ := getTagsWithNotes(cso.DB, testCacheSession)
-	// dotfiles tag and .gitconfig note should exist
+	// sync tag and .gitconfig note should exist
 	require.Len(t, twn, 2)
 	require.NoError(t, cso.DB.Close())
 }

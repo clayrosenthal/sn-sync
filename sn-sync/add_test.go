@@ -1,15 +1,16 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
-	"github.com/jonhadfield/gosn-v2"
-	"github.com/jonhadfield/gosn-v2/cache"
-	"github.com/lithammer/shortuuid"
-	"github.com/stretchr/testify/assert"
 	"io/ioutil"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/lithammer/shortuuid"
+	"github.com/stretchr/testify/assert"
 )
 
 func removeDB(dbPath string) {

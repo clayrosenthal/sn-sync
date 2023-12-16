@@ -1,9 +1,10 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
-	"github.com/jonhadfield/gosn-v2"
 	"testing"
+
+	"github.com/jonhadfield/gosn-v2"
 
 	"github.com/stretchr/testify/assert"
 )

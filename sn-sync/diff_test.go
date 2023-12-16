@@ -1,12 +1,13 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
-	"github.com/jonhadfield/gosn-v2"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/jonhadfield/gosn-v2"
 
 	"testing"
 
@@ -38,7 +39,7 @@ func TestNoteInPaths(t *testing.T) {
 }
 
 func testCompareSetup1and2(home string) (twn tagsWithNotes, fwc map[string]string) {
-	fruitTag := createTag("dotfiles.sn-dotfiles-test-fruit")
+	fruitTag := createTag("sync.sn-sync-test-fruit")
 	appleNote := createNote("apple", "apple content")
 	lemonNote := createNote("lemon", "lemon content")
 	grapeNote := createNote("grape", "grape content")
@@ -46,8 +47,8 @@ func testCompareSetup1and2(home string) (twn tagsWithNotes, fwc map[string]strin
 	twn = tagsWithNotes{fruitTagWithNotes}
 
 	fwc = make(map[string]string)
-	fwc[fmt.Sprintf("%s/.sn-dotfiles-test-fruit/apple", home)] = "apple content"
-	fwc[fmt.Sprintf("%s/.sn-dotfiles-test-fruit/lemon", home)] = "lemon content"
+	fwc[fmt.Sprintf("%s/.sn-sync-test-fruit/apple", home)] = "apple content"
+	fwc[fmt.Sprintf("%s/.sn-sync-test-fruit/lemon", home)] = "lemon content"
 	return
 }
 
@@ -117,8 +118,8 @@ func TestCompare1(t *testing.T) {
 	assert.Contains(t, err.Error(), "no such file")
 
 	// valid local, valid remote, grape not compare'd as not specified in path
-	applePath := fmt.Sprintf("%s/.sn-dotfiles-test-fruit/apple", home)
-	lemonPath := fmt.Sprintf("%s/.sn-dotfiles-test-fruit/lemon", home)
+	applePath := fmt.Sprintf("%s/.sn-sync-test-fruit/apple", home)
+	lemonPath := fmt.Sprintf("%s/.sn-sync-test-fruit/lemon", home)
 	allPaths := []string{applePath, lemonPath}
 	diffs, err = compare(twn, home, allPaths, []string{}, true)
 	assert.NoError(t, err)
@@ -192,7 +193,7 @@ func TestCompare2(t *testing.T) {
 	}()
 
 	// valid local, valid remote, grape not compare'd as not specified in path
-	paths := []string{fmt.Sprintf("%s/.sn-dotfiles-test-fruit/", home)}
+	paths := []string{fmt.Sprintf("%s/.sn-sync-test-fruit/", home)}
 	diffs, err = compare(twn, home, paths, []string{}, true)
 	assert.NoError(t, err)
 	assert.Len(t, diffs, 3)
@@ -224,7 +225,7 @@ func TestCompare2(t *testing.T) {
 
 func TestCompare3(t *testing.T) {
 	home := getTemporaryHome()
-	fruitTag := createTag("dotfiles")
+	fruitTag := createTag("sync")
 	appleNote := createNote(".apple", "apple content")
 	fruitTagWithNotes := tagWithNotes{tag: fruitTag, notes: gosn.Notes{appleNote}}
 	twn := tagsWithNotes{fruitTagWithNotes}
@@ -263,7 +264,7 @@ func TestCompare3(t *testing.T) {
 
 func TestCompare4(t *testing.T) {
 	home := getTemporaryHome()
-	fruitTag := createTag("dotfiles")
+	fruitTag := createTag("sync")
 	appleNote := createNote(".apple", "apple content")
 
 	fruitTagWithNotes := tagWithNotes{tag: fruitTag, notes: gosn.Notes{appleNote}}

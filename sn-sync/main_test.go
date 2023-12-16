@@ -1,10 +1,11 @@
-package sndotfiles
+package snsync
 
 import (
-	"github.com/jonhadfield/gosn-v2"
-	"github.com/jonhadfield/gosn-v2/cache"
 	"os"
 	"testing"
+
+	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/cache"
 )
 
 var testCacheSession *cache.Session

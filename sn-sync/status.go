@@ -1,12 +1,13 @@
-package sndotfiles
+package snsync
 
 import (
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/briandowns/spinner"
 	"github.com/jonhadfield/gosn-v2/cache"
 	"github.com/ryanuber/columnize"
-	"os"
-	"time"
 )
 
 // Status compares and then outputs status of all items (or a subset defined by Paths param):
@@ -68,7 +69,7 @@ func status(twn tagsWithNotes, home string, paths []string, debug bool) (diffs [
 	}
 
 	if len(twn) == 0 {
-		msg = "no dotfiles being tracked"
+		msg = "no sync being tracked"
 		return
 	}
 

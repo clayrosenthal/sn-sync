@@ -2,11 +2,6 @@ package main
 
 import (
 	"fmt"
-	sndotfiles2 "github.com/jonhadfield/dotfiles-sn/sn-dotfiles"
-	"github.com/jonhadfield/gosn-v2"
-	"github.com/jonhadfield/gosn-v2/cache"
-	"github.com/spf13/viper"
-	"github.com/stretchr/testify/assert"
 	"index/suffixarray"
 	"os"
 	"os/exec"
@@ -15,6 +10,12 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/cache"
+	snsync2 "github.com/jonhadfield/sync-sn/sn-sync"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
 )
 
 func removeDB(dbPath string) {
@@ -70,7 +71,7 @@ func TestMain(m *testing.M) {
 
 	var path string
 
-	path, err = cache.GenCacheDBPath(*testCacheSession, "", sndotfiles2.SNAppName)
+	path, err = cache.GenCacheDBPath(*testCacheSession, "", snsync2.SNAppName)
 	if err != nil {
 		panic(err)
 	}
@@ -104,7 +105,7 @@ func TestMain(m *testing.M) {
 func TestCLIInvalidCommand(t *testing.T) {
 	// Run the crashing code when FLAG is set
 	if os.Getenv("FLAG") == "1" {
-		msg, display, err := startCLI([]string{"sn-dotfiles", "lemon"})
+		msg, display, err := startCLI([]string{"sn-sync", "lemon"})
 		fmt.Println(msg, display, err)
 		return
 	}
@@ -148,7 +149,7 @@ func TestAdd(t *testing.T) {
 	assert.NoError(t, viper.BindEnv("server"))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = sndotfiles2.SNServerURL
+		serverURL = snsync2.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -163,7 +164,7 @@ func TestAdd(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	var msg string
 	var disp bool
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "add", applePath})
+	msg, disp, err = startCLI([]string{"sn-sync", "add", applePath})
 	assert.NotEmpty(t, msg)
 	assert.True(t, disp)
 	assert.NoError(t, err)
@@ -171,7 +172,7 @@ func TestAdd(t *testing.T) {
 }
 
 func TestAddInvalidPath(t *testing.T) {
-	msg, disp, err := startCLI([]string{"sn-dotfiles", "add", "/invalid"})
+	msg, disp, err := startCLI([]string{"sn-sync", "add", "/invalid"})
 	assert.NotEmpty(t, msg)
 	assert.True(t, disp)
 	assert.Contains(t, msg, "invalid")
@@ -179,7 +180,7 @@ func TestAddInvalidPath(t *testing.T) {
 }
 
 func TestAddAllAndPath(t *testing.T) {
-	msg, disp, err := startCLI([]string{"sn-dotfiles", "add", "--all", "/invalid"})
+	msg, disp, err := startCLI([]string{"sn-sync", "add", "--all", "/invalid"})
 	assert.NotEmpty(t, msg)
 	assert.True(t, disp)
 	assert.Contains(t, msg, "error: specifying --all and paths does not make sense")
@@ -187,7 +188,7 @@ func TestAddAllAndPath(t *testing.T) {
 }
 
 func TestAddNoArgs(t *testing.T) {
-	msg, disp, err := startCLI([]string{"sn-dotfiles", "add"})
+	msg, disp, err := startCLI([]string{"sn-sync", "add"})
 	assert.NotEmpty(t, msg)
 	assert.True(t, disp)
 	assert.Contains(t, msg, "error: either specify paths to add or --all to add everything")
@@ -212,9 +213,9 @@ func TestRemove(t *testing.T) {
 		}
 	}()
 
-	msg, disp, err := startCLI([]string{"sn-dotfiles", "add", fmt.Sprintf("%s/.fruit", home)})
+	msg, disp, err := startCLI([]string{"sn-sync", "add", fmt.Sprintf("%s/.fruit", home)})
 	assert.NoError(t, err)
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "remove", fmt.Sprintf("%s/.fruit", home)})
+	msg, disp, err = startCLI([]string{"sn-sync", "remove", fmt.Sprintf("%s/.fruit", home)})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, msg)
 	assert.Regexp(t, regexp.MustCompile(".fruit/apple\\s*removed"), msg)
@@ -234,7 +235,7 @@ func TestWipe(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = sndotfiles2.SNServerURL
+		serverURL = snsync2.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -242,13 +243,13 @@ func TestWipe(t *testing.T) {
 		}
 	}()
 
-	ai := sndotfiles2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
-	_, err := sndotfiles2.Add(ai, true)
+	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
+	_, err := snsync2.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
 	time.Sleep(time.Second * 1)
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "wipe", "--force"})
+	msg, disp, err = startCLI([]string{"sn-sync", "wipe", "--force"})
 	assert.NoError(t, err)
 	assert.Contains(t, msg, "3 ")
 	assert.True(t, disp)
@@ -267,7 +268,7 @@ func TestStatus(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = sndotfiles2.SNServerURL
+		serverURL = snsync2.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -275,12 +276,12 @@ func TestStatus(t *testing.T) {
 		}
 	}()
 	var err error
-	ai := sndotfiles2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
-	_, err = sndotfiles2.Add(ai, true)
+	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
+	_, err = snsync2.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "status", applePath})
+	msg, disp, err = startCLI([]string{"sn-sync", "status", applePath})
 	assert.NoError(t, err)
 	assert.Contains(t, msg, ".fruit/apple  identical")
 	assert.True(t, disp)
@@ -301,7 +302,7 @@ func TestSync(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = sndotfiles2.SNServerURL
+		serverURL = snsync2.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -310,12 +311,12 @@ func TestSync(t *testing.T) {
 	}()
 
 	var err error
-	ai := sndotfiles2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath, lemonPath}}
-	_, err = sndotfiles2.Add(ai, true)
+	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath, lemonPath}}
+	_, err = snsync2.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "--debug", "sync", applePath})
+	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
 	assert.NoError(t, err)
 	assert.Contains(t, msg, "nothing to do")
 	assert.True(t, disp)
@@ -324,13 +325,13 @@ func TestSync(t *testing.T) {
 	// add delay so local file is recognised as newer
 	time.Sleep(1 * time.Second)
 	assert.NoError(t, createTemporaryFiles(fwc))
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "--debug", "sync", applePath})
+	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
 	assert.NoError(t, err)
 	assert.Contains(t, msg, "pushed")
 	// test pull - specify unchanged path and expect no change
 	err = os.Remove(lemonPath)
 	assert.NoError(t, err)
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "--debug", "sync", applePath})
+	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
 	assert.NoError(t, err)
 	assert.Contains(t, msg, "nothing to do")
 	// test pull - specify changed path (updated content set to be older) and expect change
@@ -341,7 +342,7 @@ func TestSync(t *testing.T) {
 
 	tenMinsAgo := time.Now().Add(-time.Minute * 10)
 	err = os.Chtimes(lemonPath, tenMinsAgo, tenMinsAgo)
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "--debug", "sync", lemonPath})
+	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", lemonPath})
 	assert.NoError(t, err)
 	r := regexp.MustCompile("pulled")
 	index := suffixarray.New([]byte(msg))
@@ -362,24 +363,24 @@ func TestDiff(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = sndotfiles2.SNServerURL
+		serverURL = snsync2.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
 			fmt.Println("failed to wipe")
 		}
 	}()
-	ai := sndotfiles2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
-	_, err := sndotfiles2.Add(ai, true)
+	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
+	_, err := snsync2.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "--debug", "diff", applePath})
+	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "diff", applePath})
 	assert.NoError(t, err)
 	assert.NotEmpty(t, msg)
 	assert.Contains(t, msg, "no differences")
 	assert.True(t, disp)
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "--debug", "diff", "~/.does/not/exist"})
+	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "diff", "~/.does/not/exist"})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "no such file")
 }
@@ -397,7 +398,7 @@ func TestSyncExclude(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = sndotfiles2.SNServerURL
+		serverURL = snsync2.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -405,12 +406,12 @@ func TestSyncExclude(t *testing.T) {
 		}
 	}()
 
-	ai := sndotfiles2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
-	_, err := sndotfiles2.Add(ai, true)
+	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
+	_, err := snsync2.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "--debug", "sync", applePath})
+	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
 	assert.NoError(t, err)
 	assert.Contains(t, msg, "nothing to do")
 	assert.True(t, disp)
@@ -418,7 +419,7 @@ func TestSyncExclude(t *testing.T) {
 	// add delay so local file is recognised as newer
 	time.Sleep(1 * time.Second)
 	assert.NoError(t, createTemporaryFiles(fwc))
-	msg, disp, err = startCLI([]string{"sn-dotfiles", "--debug", "sync", applePath})
+	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
 	assert.NoError(t, err)
 	assert.Contains(t, msg, "pushed")
 }

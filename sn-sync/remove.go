@@ -1,14 +1,15 @@
-package sndotfiles
+package snsync
 
 import (
 	"errors"
 	"fmt"
+	"os"
+	"time"
+
 	"github.com/briandowns/spinner"
 	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
 	"github.com/ryanuber/columnize"
-	"os"
-	"time"
 )
 
 type RemoveInput struct {

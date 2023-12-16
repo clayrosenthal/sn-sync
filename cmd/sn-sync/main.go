@@ -3,15 +3,16 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/jonhadfield/gosn-v2"
-	"github.com/jonhadfield/gosn-v2/cache"
 	"os"
 	"path/filepath"
 	"sort"
 	"strings"
 	"time"
 
-	sndotfiles "github.com/jonhadfield/dotfiles-sn/sn-dotfiles"
+	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/cache"
+
+	snsync "github.com/jonhadfield/sync-sn/sn-sync"
 
 	"github.com/spf13/viper"
 	"github.com/urfave/cli"
@@ -126,7 +127,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 	app := cli.NewApp()
 	app.EnableBashCompletion = true
 
-	app.Name = "sn-dotfiles"
+	app.Name = "sn-sync"
 	app.Version = versionOutput
 	app.Compiled = time.Now()
 	app.Authors = []cli.Author{
@@ -136,7 +137,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		},
 	}
 	app.HelpName = "-"
-	app.Usage = "sync dotfiles with Standard Notes"
+	app.Usage = "sync sync with Standard Notes"
 	app.Description = ""
 
 	app.Flags = []cli.Flag{
@@ -145,7 +146,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		cli.StringFlag{Name: "home-dir"},
 		cli.BoolFlag{Name: "use-session"},
 		cli.StringFlag{Name: "session-key"},
-		cli.IntFlag{Name: "page-size", Hidden: true, Value: sndotfiles.DefaultPageSize},
+		cli.IntFlag{Name: "page-size", Hidden: true, Value: snsync.DefaultPageSize},
 		cli.BoolFlag{Name: "quiet"},
 		cli.BoolFlag{Name: "no-stdout"},
 	}
@@ -168,20 +169,20 @@ func startCLI(args []string) (msg string, display bool, err error) {
 			session, _, err = cache.GetSession(opts.useSession, opts.sessKey, opts.server, opts.debug)
 
 			var cacheDBPath string
-			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, sndotfiles.SNAppName)
+			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
 			if err != nil {
 				return err
 			}
 			session.CacheDBPath = cacheDBPath
 
-			_, msg, err = sndotfiles.Status(&session, opts.home, c.Args(), opts.pageSize, opts.debug, false)
+			_, msg, err = snsync.Status(&session, opts.home, c.Args(), opts.pageSize, opts.debug, false)
 			return err
 		},
 	}
 
 	syncCmd := cli.Command{
 		Name:  "sync",
-		Usage: "sync dotfiles",
+		Usage: "sync sync",
 		Flags: []cli.Flag{
 			cli.StringSliceFlag{
 				Name:  "exclude",
@@ -206,14 +207,14 @@ func startCLI(args []string) (msg string, display bool, err error) {
 			session, _, err = cache.GetSession(opts.useSession,
 				opts.sessKey, opts.server, opts.debug)
 			var cacheDBPath string
-			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, sndotfiles.SNAppName)
+			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
 			if err != nil {
 				return err
 			}
 			session.CacheDBPath = cacheDBPath
 
-			var so sndotfiles.SyncOutput
-			so, err = sndotfiles.Sync(sndotfiles.SNDotfilesSyncInput{
+			var so snsync.SyncOutput
+			so, err = snsync.Sync(snsync.SNDotfilesSyncInput{
 				Session:  &session,
 				Home:     opts.home,
 				Paths:    c.Args(),
@@ -237,7 +238,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "all",
-				Usage: "add all dotfiles (non-recursive)",
+				Usage: "add all sync (non-recursive)",
 			},
 		},
 		Action: func(c *cli.Context) error {
@@ -278,18 +279,18 @@ func startCLI(args []string) (msg string, display bool, err error) {
 			session, _, err = cache.GetSession(opts.useSession,
 				opts.sessKey, opts.server, opts.debug)
 			var cacheDBPath string
-			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, sndotfiles.SNAppName)
+			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
 			if err != nil {
 				return err
 			}
 			session.CacheDBPath = cacheDBPath
 
-			ai := sndotfiles.AddInput{Session: &session, Home: opts.home, Paths: absPaths,
+			ai := snsync.AddInput{Session: &session, Home: opts.home, Paths: absPaths,
 				PageSize: opts.pageSize, All: c.Bool("all")}
 
-			var ao sndotfiles.AddOutput
+			var ao snsync.AddOutput
 
-			ao, err = sndotfiles.Add(ai, true)
+			ao, err = snsync.Add(ai, true)
 			if err != nil {
 				return err
 			}
@@ -327,13 +328,13 @@ func startCLI(args []string) (msg string, display bool, err error) {
 				opts.sessKey, opts.server,
 				opts.debug)
 			var cacheDBPath string
-			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, sndotfiles.SNAppName)
+			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
 			if err != nil {
 				return err
 			}
 			session.CacheDBPath = cacheDBPath
 
-			ri := sndotfiles.RemoveInput{
+			ri := snsync.RemoveInput{
 				Session:  &session,
 				Home:     opts.home,
 				Paths:    c.Args(),
@@ -341,9 +342,9 @@ func startCLI(args []string) (msg string, display bool, err error) {
 				Debug:    opts.debug,
 			}
 
-			var ro sndotfiles.RemoveOutput
+			var ro snsync.RemoveOutput
 
-			ro, err = sndotfiles.Remove(ri, c.Bool("no-stdout"))
+			ro, err = snsync.Remove(ri, c.Bool("no-stdout"))
 			if err != nil {
 				return err
 			}
@@ -370,14 +371,14 @@ func startCLI(args []string) (msg string, display bool, err error) {
 
 			var cacheDBPath string
 
-			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, sndotfiles.SNAppName)
+			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
 			if err != nil {
 				return err
 			}
 
 			session.CacheDBPath = cacheDBPath
 
-			_, msg, err = sndotfiles.Diff(&session, opts.home, c.Args(), opts.pageSize, true, c.Bool("no-stdout"))
+			_, msg, err = snsync.Diff(&session, opts.home, c.Args(), opts.pageSize, true, c.Bool("no-stdout"))
 
 			return err
 		},
@@ -450,7 +451,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 
 	wipeCmd := cli.Command{
 		Name:  "wipe",
-		Usage: "remove all dotfiles",
+		Usage: "remove all sync",
 		Flags: []cli.Flag{
 			cli.BoolFlag{
 				Name:  "force",
@@ -481,7 +482,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 				opts.sessKey, opts.server,
 				opts.debug)
 			var cacheDBPath string
-			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, sndotfiles.SNAppName)
+			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
 			if err != nil {
 				return err
 			}
@@ -491,16 +492,16 @@ func startCLI(args []string) (msg string, display bool, err error) {
 			if c.Bool("force") {
 				proceed = true
 			} else {
-				fmt.Printf("wipe all dotfiles for account %s? ", email)
+				fmt.Printf("wipe all sync for account %s? ", email)
 				var input string
 				_, err = fmt.Scanln(&input)
-				if err == nil && sndotfiles.StringInSlice(input, []string{"y", "yes"}, false) {
+				if err == nil && snsync.StringInSlice(input, []string{"y", "yes"}, false) {
 					proceed = true
 				}
 			}
 			if proceed {
 				var num int
-				num, err = sndotfiles.WipeDotfileTagsAndNotes(&session, opts.pageSize, c.Bool("no-stdout"))
+				num, err = snsync.WipeDotfileTagsAndNotes(&session, opts.pageSize, c.Bool("no-stdout"))
 				if err != nil {
 					return err
 				}

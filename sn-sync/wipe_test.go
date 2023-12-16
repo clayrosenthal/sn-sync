@@ -1,9 +1,10 @@
-package sndotfiles
+package snsync
 
 import (
+	"testing"
+
 	"github.com/jonhadfield/gosn-v2/cache"
 	"github.com/stretchr/testify/assert"
-	"testing"
 )
 
 func TestWipeInvalidSession(t *testing.T) {
