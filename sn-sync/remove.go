@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/jonhadfield/gosn-v2/items"
 	"github.com/ryanuber/columnize"
 )
 
@@ -90,7 +90,7 @@ func Remove(ri RemoveInput, useStdErr bool) (ro RemoveOutput, err error) {
 
 	var results []string
 
-	var notesToRemove gosn.Notes
+	var notesToRemove items.Notes
 
 	for _, path := range ri.Paths {
 		homeRelPath, pathsToRemove, matchingItems := getNotesToRemove(path, ri.Home, twn, ri.Debug)
@@ -136,7 +136,7 @@ func Remove(ri RemoveInput, useStdErr bool) (ro RemoveOutput, err error) {
 		debugPrint(ri.Debug, fmt.Sprintf("Remove | notes to removeFromDB: [%d] %s", x, n.Content.GetTitle()))
 	}
 
-	var a gosn.Items
+	var a items.Items
 
 	for i := range notesToRemove {
 		a = append(a, &notesToRemove[i])
@@ -167,26 +167,26 @@ func Remove(ri RemoveInput, useStdErr bool) (ro RemoveOutput, err error) {
 
 type removeInput struct {
 	session *cache.Session
-	items   gosn.Items
+	items   items.Items
 }
 
 func removeFromDB(input removeInput) error {
 	if !input.session.Valid() {
 		return errors.New("session is invalid")
 	}
-	var items gosn.Items
+	var itemsToRemove items.Items
 
 	for _, i := range input.items {
 		i.SetDeleted(true)
-		items = append(items, i)
+		itemsToRemove = append(itemsToRemove, i)
 	}
 
-	if items == nil {
+	if itemsToRemove == nil {
 		return fmt.Errorf("no items to removeFromDB")
 	}
 
 	var err error
-	if err = cache.SaveItems(input.session.CacheDB, input.session, items, true); err != nil {
+	if err = cache.SaveItems(input.session.CacheDB, input.session, itemsToRemove, true); err != nil {
 		return err
 	}
 

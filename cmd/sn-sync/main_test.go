@@ -11,9 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/jonhadfield/gosn-v2"
+	snsync "github.com/clayrosenthal/sn-sync/sn-sync"
+	"github.com/jonhadfield/gosn-v2/auth"
 	"github.com/jonhadfield/gosn-v2/cache"
-	snsync2 "github.com/jonhadfield/sync-sn/sn-sync"
+	"github.com/jonhadfield/gosn-v2/items"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
 )
@@ -28,7 +29,7 @@ func removeDB(dbPath string) {
 
 func CleanUp(session cache.Session) error {
 	removeDB(session.CacheDBPath)
-	err := gosn.DeleteContent(&gosn.Session{
+	err := items.DeleteContent(&auth.Session{
 		Token:             testCacheSession.Token,
 		MasterKey:         testCacheSession.MasterKey,
 		Server:            testCacheSession.Server,
@@ -50,13 +51,13 @@ func csync(si cache.SyncInput) (so cache.SyncOutput, err error) {
 	})
 }
 func TestMain(m *testing.M) {
-	gs, err := gosn.CliSignIn(os.Getenv("SN_EMAIL"), os.Getenv("SN_PASSWORD"), os.Getenv("SN_SERVER"), true)
+	gs, err := auth.CliSignIn(os.Getenv("SN_EMAIL"), os.Getenv("SN_PASSWORD"), os.Getenv("SN_SERVER"), true)
 	if err != nil {
 		panic(err)
 	}
 
 	testCacheSession = &cache.Session{
-		Session: &gosn.Session{
+		Session: &auth.Session{
 			Debug:             true,
 			Server:            gs.Server,
 			Token:             gs.Token,
@@ -71,7 +72,7 @@ func TestMain(m *testing.M) {
 
 	var path string
 
-	path, err = cache.GenCacheDBPath(*testCacheSession, "", snsync2.SNAppName)
+	path, err = cache.GenCacheDBPath(*testCacheSession, "", snsync.SNAppName)
 	if err != nil {
 		panic(err)
 	}
@@ -149,7 +150,7 @@ func TestAdd(t *testing.T) {
 	assert.NoError(t, viper.BindEnv("server"))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = snsync2.SNServerURL
+		serverURL = snsync.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -235,7 +236,7 @@ func TestWipe(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = snsync2.SNServerURL
+		serverURL = snsync.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -243,8 +244,8 @@ func TestWipe(t *testing.T) {
 		}
 	}()
 
-	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
-	_, err := snsync2.Add(ai, true)
+	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
+	_, err := snsync.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
@@ -268,7 +269,7 @@ func TestStatus(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = snsync2.SNServerURL
+		serverURL = snsync.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -276,8 +277,8 @@ func TestStatus(t *testing.T) {
 		}
 	}()
 	var err error
-	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
-	_, err = snsync2.Add(ai, true)
+	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
+	_, err = snsync.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
@@ -302,7 +303,7 @@ func TestSync(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = snsync2.SNServerURL
+		serverURL = snsync.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -311,8 +312,8 @@ func TestSync(t *testing.T) {
 	}()
 
 	var err error
-	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath, lemonPath}}
-	_, err = snsync2.Add(ai, true)
+	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath, lemonPath}}
+	_, err = snsync.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
@@ -363,15 +364,15 @@ func TestDiff(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = snsync2.SNServerURL
+		serverURL = snsync.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
 			fmt.Println("failed to wipe")
 		}
 	}()
-	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
-	_, err := snsync2.Add(ai, true)
+	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
+	_, err := snsync.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool
@@ -398,7 +399,7 @@ func TestSyncExclude(t *testing.T) {
 	assert.NoError(t, createTemporaryFiles(fwc))
 	serverURL := os.Getenv("SN_SERVER")
 	if serverURL == "" {
-		serverURL = snsync2.SNServerURL
+		serverURL = snsync.SNServerURL
 	}
 	defer func() {
 		if err := CleanUp(*testCacheSession); err != nil {
@@ -406,8 +407,8 @@ func TestSyncExclude(t *testing.T) {
 		}
 	}()
 
-	ai := snsync2.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
-	_, err := snsync2.Add(ai, true)
+	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
+	_, err := snsync.Add(ai, true)
 	assert.NoError(t, err)
 	var msg string
 	var disp bool

@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
 
-	snsync "github.com/jonhadfield/sync-sn/sn-sync"
+	snsync "github.com/clayrosenthal/sn-sync"
 
 	"github.com/spf13/viper"
 	"github.com/urfave/cli"
@@ -435,15 +434,15 @@ func startCLI(args []string) (msg string, display bool, err error) {
 				os.Exit(1)
 			}
 			if sAdd {
-				msg, err = gosn.AddSession(opts.server, sessKey, nil, c.Bool("debug"))
+				msg, err = auth.AddSession(opts.server, sessKey, nil, c.Bool("debug"))
 				return err
 			}
 			if sRemove {
-				msg = gosn.RemoveSession(nil)
+				msg = auth.RemoveSession(nil)
 				return nil
 			}
 			if sStatus {
-				msg, err = gosn.SessionStatus(sessKey, nil)
+				msg, err = auth.SessionStatus(sessKey, nil)
 			}
 			return err
 		},

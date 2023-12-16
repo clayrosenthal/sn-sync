@@ -109,6 +109,14 @@ func sync(input syncInput) (output syncOutput, err error) {
 	return
 }
 
+type SNFileSyncInput struct {
+	Session        *cache.Session
+	Root           string
+	Paths, Exclude []string
+	PageSize       int
+	Debug          bool
+}
+
 type SNDotfilesSyncInput struct {
 	Session        *cache.Session
 	Home           string
@@ -127,7 +135,7 @@ func syncDBwithFS(si syncInput) (so syncOutput, err error) {
 	}
 	var itemDiffs []ItemDiff
 
-	itemDiffs, err = compare(si.twn, si.home, si.paths, si.exclude, si.debug)
+	itemDiffs, err = compare(si.twn, si.root, si.paths, si.exclude, si.debug)
 	if err != nil {
 		if strings.Contains(err.Error(), "tags with notes not supplied") {
 			err = errors.New("no remote sync found")
@@ -141,7 +149,7 @@ func syncDBwithFS(si syncInput) (so syncOutput, err error) {
 	var itemsToSync bool
 	for _, itemDiff := range itemDiffs {
 		// check if itemDiff is for a path to be excluded
-		if matchesPathsToExclude(si.home, itemDiff.homeRelPath, si.exclude) {
+		if matchesPathsToExclude(si.root, itemDiff.homeRelPath, si.exclude) {
 			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | excluding: %s", itemDiff.homeRelPath))
 			continue
 		}
@@ -211,7 +219,7 @@ type syncInput struct {
 	db             *storm.DB
 	session        *cache.Session
 	twn            tagsWithNotes
-	home           string
+	root           string
 	paths, exclude []string
 	debug          bool
 	close          bool

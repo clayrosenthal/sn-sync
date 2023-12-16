@@ -6,8 +6,8 @@ import (
 	"time"
 
 	"github.com/briandowns/spinner"
-	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/jonhadfield/gosn-v2/items"
 )
 
 func WipeDotfileTagsAndNotes(session *cache.Session, pageSize int, useStdErr bool) (int, error) {
@@ -50,7 +50,7 @@ func WipeDotfileTagsAndNotes(session *cache.Session, pageSize int, useStdErr boo
 		return 0, err
 	}
 
-	var itemsToRemove gosn.Items
+	var itemsToRemove items.Items
 
 	for _, twn := range remote {
 		twn.tag.Deleted = true

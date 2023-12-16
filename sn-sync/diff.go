@@ -11,8 +11,8 @@ import (
 
 	"github.com/briandowns/spinner"
 	"github.com/jonhadfield/findexec"
-	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/jonhadfield/gosn-v2/items"
 )
 
 const (
@@ -66,13 +66,14 @@ func Diff(session *cache.Session, home string, paths []string, pageSize int, clo
 	return diff(remote, home, paths, session.Debug)
 }
 
+// TODO: rename homeRelPath? relPath? rootRelPath?
 type ItemDiff struct {
 	tagTitle    string
 	noteTitle   string
 	path        string
 	homeRelPath string
 	diff        string
-	remote      gosn.Note
+	remote      items.Note
 	local       string
 }
 
@@ -141,7 +142,7 @@ func processContentDiffs(diffs []ItemDiff, tempDir, diffBinary string) (differen
 			// write local and remote content to temporary files
 			var f1, f2 *os.File
 
-			uuid := gosn.GenUUID()
+			uuid := items.GenUUID()
 			f1path := fmt.Sprintf("%ssn-sync-compare-%s-f1", tempDir, uuid)
 			f2path := fmt.Sprintf("%ssn-sync-compare-%s-f2", tempDir, uuid)
 

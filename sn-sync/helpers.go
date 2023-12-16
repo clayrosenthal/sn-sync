@@ -10,8 +10,9 @@ import (
 	"strings"
 
 	"github.com/asdine/storm/v3"
-	"github.com/jonhadfield/gosn-v2"
+	"github.com/jonhadfield/gosn-v2/auth"
 	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/jonhadfield/gosn-v2/items"
 	"github.com/pkg/errors"
 )
 
@@ -54,7 +55,7 @@ func stripHome(in, home string) string {
 }
 
 func addToDB(db *storm.DB, session *cache.Session, itemDiffs []ItemDiff, close bool) (err error) {
-	var dItems gosn.Items
+	var dItems items.Items
 	for i := range itemDiffs {
 		dItems = append(dItems, &itemDiffs[i].remote)
 	}
@@ -67,7 +68,7 @@ func addToDB(db *storm.DB, session *cache.Session, itemDiffs []ItemDiff, close b
 	return cache.SaveItems(db, session, dItems, close)
 }
 
-func getTagIfExists(name string, twn tagsWithNotes) (tag gosn.Tag, found bool) {
+func getTagIfExists(name string, twn tagsWithNotes) (tag items.Tag, found bool) {
 	for _, x := range twn {
 		if name == x.tag.Content.GetTitle() {
 			return x.tag, true
@@ -77,7 +78,7 @@ func getTagIfExists(name string, twn tagsWithNotes) (tag gosn.Tag, found bool) {
 	return tag, false
 }
 
-func createMissingTags(db *storm.DB, session *cache.Session, pt string, twn tagsWithNotes) (newTags gosn.Tags, err error) {
+func createMissingTags(db *storm.DB, session *cache.Session, pt string, twn tagsWithNotes) (newTags items.Tags, err error) {
 	var fts []string
 
 	ts := strings.Split(pt, ".")
@@ -94,7 +95,7 @@ func createMissingTags(db *storm.DB, session *cache.Session, pt string, twn tags
 		}
 	}
 
-	itemsToPush := gosn.Items{}
+	itemsToPush := items.Items{}
 
 	for _, f := range fts {
 		_, found := getTagIfExists(f, twn)
@@ -112,18 +113,18 @@ func createMissingTags(db *storm.DB, session *cache.Session, pt string, twn tags
 	return itemsToPush.Tags(), err
 }
 
-func pushAndTag(db *storm.DB, session *cache.Session, tim map[string]gosn.Items, twn tagsWithNotes) (tagsPushed, notesPushed int, err error) {
+func pushAndTag(db *storm.DB, session *cache.Session, tim map[string]items.Items, twn tagsWithNotes) (tagsPushed, notesPushed int, err error) {
 	// create missing tags first to create a new tim
-	itemsToPush := gosn.Items{}
+	itemsToPush := items.Items{}
 	for potentialTag, notes := range tim {
 		existingTag, found := getTagIfExists(potentialTag, twn)
 		if found {
 			// if tag exists then just add references to the note
-			var newReferences gosn.ItemReferences
+			var newReferences items.ItemReferences
 
 			for _, note := range notes {
 				itemsToPush = append(itemsToPush, note)
-				newReferences = append(newReferences, gosn.ItemReference{
+				newReferences = append(newReferences, items.ItemReference{
 					UUID:        note.GetUUID(),
 					ContentType: "Note",
 				})
@@ -133,16 +134,16 @@ func pushAndTag(db *storm.DB, session *cache.Session, tim map[string]gosn.Items,
 			itemsToPush = append(itemsToPush, &existingTag)
 		} else {
 			// need to create tag
-			var newTags gosn.Tags
+			var newTags items.Tags
 			newTags, err = createMissingTags(db, session, potentialTag, twn)
 			if err != nil {
 				return
 			}
 			// create a new item reference for each note to be tagged
-			var newReferences gosn.ItemReferences
+			var newReferences items.ItemReferences
 			for _, note := range notes {
 				itemsToPush = append(itemsToPush, note)
-				newReferences = append(newReferences, gosn.ItemReference{
+				newReferences = append(newReferences, items.ItemReference{
 					UUID:        note.GetUUID(),
 					ContentType: "Note",
 				})
@@ -170,16 +171,16 @@ func pushAndTag(db *storm.DB, session *cache.Session, tim map[string]gosn.Items,
 	return tagsPushed, notesPushed, err
 }
 
-func getItemCounts(items gosn.Items) (tags, notes int) {
+func getItemCounts(items items.Items) (tags, notes int) {
 	return len(items.Tags()), len(items.Notes())
 }
 
-func createTag(name string) (tag gosn.Tag) {
-	dfTagContent := gosn.NewTagContent()
-	tag = gosn.NewTag()
+func createTag(name string) (tag items.Tag) {
+	dfTagContent := items.NewTagContent()
+	tag = items.NewTag()
 	dfTagContent.Title = name
 	tag.Content = *dfTagContent
-	tag.UUID = gosn.GenUUID()
+	tag.UUID = items.GenUUID()
 
 	return
 }
@@ -224,7 +225,7 @@ func getPathType(path string) (res string, err error) {
 	return
 }
 
-func noteInNotes(item gosn.Note, items gosn.Notes) bool {
+func noteInNotes(item items.Note, items items.Notes) bool {
 	for _, i := range items {
 		if i.GetUUID() == item.GetUUID() {
 			return true
@@ -236,7 +237,7 @@ func noteInNotes(item gosn.Note, items gosn.Notes) bool {
 
 // getAllTagsWithoutNotes finds all tags that no longer have notes
 // (doesn't check tags that are empty after child tag(s) removed)
-func getAllTagsWithoutNotes(twn tagsWithNotes, deletedNotes gosn.Notes, debug bool) (tagsWithoutNotes []string) {
+func getAllTagsWithoutNotes(twn tagsWithNotes, deletedNotes items.Notes, debug bool) (tagsWithoutNotes []string) {
 	// getTagsWithNotes a map of all tags and notes, minus the notes to delete
 	res := make(map[string]int)
 	// initialise map with 0 count
@@ -277,7 +278,7 @@ func removeStringFromSlice(item string, slice []string) (updatedSlice []string) 
 
 // findEmptyTags takes a set of tags with notes and a list of notes being deleted
 // in order to find all tags that are already empty or will be empty once the notes are deleted
-func findEmptyTags(twn tagsWithNotes, deletedNotes gosn.Notes, debug bool) gosn.Tags {
+func findEmptyTags(twn tagsWithNotes, deletedNotes items.Notes, debug bool) items.Tags {
 	// getTagsWithNotes a list of tags without notes (including those that have just become noteless)
 	allTagsWithoutNotes := getAllTagsWithoutNotes(twn, deletedNotes, debug)
 	debugPrint(debug, fmt.Sprintf("findEmptyTags | allTagsWithoutNotes: %s", allTagsWithoutNotes))
@@ -361,7 +362,7 @@ func findEmptyTags(twn tagsWithNotes, deletedNotes gosn.Notes, debug bool) gosn.
 	return tagTitlesToTags(tagsToRemove, twn)
 }
 
-func tagTitlesToTags(tagTitles []string, twn tagsWithNotes) (res gosn.Tags) {
+func tagTitlesToTags(tagTitles []string, twn tagsWithNotes) (res items.Tags) {
 	for _, t := range twn {
 		if StringInSlice(t.tag.Content.GetTitle(), tagTitles, true) {
 			res = append(res, t.tag)
@@ -371,7 +372,7 @@ func tagTitlesToTags(tagTitles []string, twn tagsWithNotes) (res gosn.Tags) {
 	return
 }
 
-func getNotesToRemove(path, home string, twn tagsWithNotes, debug bool) (homeRelPath string, pathsToRemove []string, res gosn.Notes) {
+func getNotesToRemove(path, home string, twn tagsWithNotes, debug bool) (homeRelPath string, pathsToRemove []string, res items.Notes) {
 	pathType, err := getPathType(path)
 	if err != nil {
 		return
@@ -535,7 +536,7 @@ func isUnencryptedSession(in string) bool {
 	return false
 }
 
-func ParseSessionString(in string) (email string, session gosn.Session, err error) {
+func ParseSessionString(in string) (email string, session auth.Session, err error) {
 	if !isUnencryptedSession(in) {
 		err = errors.New("session invalid, or encrypted and key was not provided")
 		return
@@ -543,7 +544,7 @@ func ParseSessionString(in string) (email string, session gosn.Session, err erro
 
 	parts := strings.Split(in, ";")
 	email = parts[0]
-	session = gosn.Session{
+	session = auth.Session{
 		Token:  parts[2],
 		Server: parts[1],
 	}

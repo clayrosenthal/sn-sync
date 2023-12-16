@@ -11,8 +11,8 @@ import (
 
 	"github.com/asdine/storm/v3"
 	"github.com/briandowns/spinner"
-	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/jonhadfield/gosn-v2/items"
 	"github.com/ryanuber/columnize"
 )
 
@@ -119,7 +119,7 @@ type AddOutput struct {
 }
 
 func add(db *storm.DB, ai AddInput, noRecurse bool) (ao AddOutput, err error) {
-	var tagToItemMap map[string]gosn.Items
+	var tagToItemMap map[string]items.Items
 
 	var fsPathsToAdd []string
 
@@ -144,7 +144,7 @@ func add(db *storm.DB, ai AddInput, noRecurse bool) (ao AddOutput, err error) {
 	if !tagExists("sync", ai.Twn) && !dotFilesTagInTagToItemMap {
 		debugPrint(ai.Session.Debug, "Add | adding missing sync tag")
 
-		tagToItemMap[DotFilesTag] = gosn.Items{}
+		tagToItemMap[DotFilesTag] = items.Items{}
 	}
 
 	// addToDB and tag items
@@ -161,8 +161,8 @@ func add(db *storm.DB, ai AddInput, noRecurse bool) (ao AddOutput, err error) {
 }
 
 func generateTagItemMap(fsPaths []string, home string, twn tagsWithNotes) (statusLines []string,
-	tagToItemMap map[string]gosn.Items, pathsAdded, pathsExisting []string, err error) {
-	tagToItemMap = make(map[string]gosn.Items)
+	tagToItemMap map[string]items.Items, pathsAdded, pathsExisting []string, err error) {
+	tagToItemMap = make(map[string]items.Items)
 
 	var added []string
 
@@ -190,7 +190,7 @@ func generateTagItemMap(fsPaths []string, home string, twn tagsWithNotes) (statu
 		// now add
 		pathsAdded = append(pathsAdded, path)
 
-		var itemToAdd gosn.Note
+		var itemToAdd items.Note
 
 		itemToAdd, err = createItem(path, filename)
 		if err != nil {
@@ -260,7 +260,7 @@ func getLocalFSPaths(paths []string, noRecurse bool) (finalPaths []string, err e
 	return finalPaths, err
 }
 
-func createItem(path, title string) (item gosn.Note, err error) {
+func createItem(path, title string) (item items.Note, err error) {
 	// read file content
 	var file *os.File
 
@@ -284,8 +284,8 @@ func createItem(path, title string) (item gosn.Note, err error) {
 
 	localStr := string(localBytes)
 	// addToDB item
-	item = gosn.NewNote()
-	itemContent := gosn.NewNoteContent()
+	item = items.NewNote()
+	itemContent := items.NewNoteContent()
 	item.Content = *itemContent
 	item.Content.SetTitle(title)
 	item.Content.SetText(localStr)

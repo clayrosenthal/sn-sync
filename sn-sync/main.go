@@ -8,8 +8,8 @@ import (
 	"github.com/asdine/storm/v3"
 	"github.com/asdine/storm/v3/q"
 	"github.com/fatih/color"
-	"github.com/jonhadfield/gosn-v2"
 	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/jonhadfield/gosn-v2/items"
 )
 
 const (
@@ -49,26 +49,26 @@ func getTagsWithNotes(db *storm.DB, session *cache.Session) (t tagsWithNotes, er
 		}
 	}
 
-	var items gosn.Items
-	items, err = notesAndTags.ToItems(session)
+	var allItems items.Items
+	allItems, err = notesAndTags.ToItems(session)
 	if err != nil {
 		return
 	}
 
-	var dotfileTags gosn.Tags
+	var dotfileTags items.Tags
 
-	var notes gosn.Notes
+	var notes items.Notes
 
 	r := regexp.MustCompile(fmt.Sprintf("%s.?.*", DotFilesTag))
 
-	for _, item := range items {
-		if item.GetContent() != nil && item.GetContentType() == "Tag" && r.MatchString(item.GetContent().(*gosn.TagContent).Title) {
-			tt := item.(*gosn.Tag)
+	for _, item := range allItems {
+		if item.GetContent() != nil && item.GetContentType() == "Tag" && r.MatchString(item.GetContent().(*items.TagContent).Title) {
+			tt := item.(*items.Tag)
 			dotfileTags = append(dotfileTags, *tt)
 		}
 
 		if item.GetContentType() == "Note" && item.GetContent() != nil {
-			n := item.(*gosn.Note)
+			n := item.(*items.Note)
 			notes = append(notes, *n)
 		}
 	}
@@ -90,7 +90,7 @@ func getTagsWithNotes(db *storm.DB, session *cache.Session) (t tagsWithNotes, er
 	return t, err
 }
 
-func getItemNoteRefIds(itemRefs gosn.ItemReferences) (refIds []string) {
+func getItemNoteRefIds(itemRefs items.ItemReferences) (refIds []string) {
 	for _, ir := range itemRefs {
 		if ir.ContentType == "Note" {
 			refIds = append(refIds, ir.UUID)
@@ -101,8 +101,8 @@ func getItemNoteRefIds(itemRefs gosn.ItemReferences) (refIds []string) {
 }
 
 type tagWithNotes struct {
-	tag   gosn.Tag
-	notes gosn.Notes
+	tag   items.Tag
+	notes items.Notes
 }
 
 type tagsWithNotes []tagWithNotes
@@ -110,7 +110,7 @@ type tagsWithNotes []tagWithNotes
 // GetNoteConfig defines the input for getting notes from SN
 type GetNoteConfig struct {
 	Session    cache.Session
-	Filters    gosn.ItemFilters
+	Filters    items.ItemFilters
 	NoteTitles []string
 	TagTitles  []string
 	TagUUIDs   []string
