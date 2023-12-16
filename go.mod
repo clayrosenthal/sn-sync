@@ -1,6 +1,6 @@
-module github.com/jonhadfield/dotfiles-sn
+module github.com/clayrosenthal/sn-sync
 
-go 1.16
+go 1.21
 
 require (
 	github.com/asdine/storm/v3 v3.2.1
@@ -11,7 +11,7 @@ require (
 	github.com/fatih/set v0.2.1
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/jonhadfield/findexec v0.0.0-20190902195615-78db24cd4e77
-	github.com/jonhadfield/gosn-v2 v0.0.0-20211123204812-5a0242ddbf0d
+	github.com/jonhadfield/gosn-v2 master
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lithammer/shortuuid v3.0.0+incompatible
 	github.com/mitchellh/mapstructure v1.4.3 // indirect

@@ -10,10 +10,38 @@ before:
     - make clean
     - go mod tidy
 
+# join mac binaries into one
+universal_binaries:
+  - id: sn-sync-macos
+    ids:
+      - sn-sync-macos-amd64
+      - sn-sync-macos-arm
+    name_template: "sn"
+    replace: true
+    mod_timestamp: "{{ .CommitTimestamp }}"
+    hooks:
+      post: |
+        sh -c 'cat <<EOF > /tmp/sn-sync-gon-universal.hcl
+            source = ["./dist/sn-sync-macos_darwin_all/sn-sync"]
+            bundle_id = "uk.co.lessknown.sn-cli"
+            apple_id {
+              username = "jon@lessknown.co.uk"
+              password = "@env:AC_PASSWORD"
+            }
+            sign {
+              application_identity = "Developer ID Application: Jonathan Hadfield (VBZY8FBYR5)"
+            }
+            zip {
+              output_path = "./dist/sn-sync_Darwin_all.zip"
+            }
+        EOF
+        gon /tmp/sn-sync-gon-universal.hcl
+        '
+
 builds:
-  - id: sn-dotfiles-macos
-    main: ./cmd/sn-dotfiles/
-    binary: sn-dotfiles
+  - id: sn-sync-macos-amd64
+    main: ./cmd/sn-sync/
+    binary: sn-sync
     goos:
       - darwin
     goarch:
@@ -22,29 +50,10 @@ builds:
       - -trimpath
     ldflags:
       - "-s -w -X main.version={{ .Version }} -X main.sha={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.tag={{ .Tag }}"
-    hooks:
-      post: |
-        sh -c '
-        cat > /tmp/sn-dotfiles-gon-amd64.hcl << EOF
-        source = ["./dist/sn-dotfiles-macos_darwin_amd64/sn-dotfiles"]
-        bundle_id = "uk.co.lessknown.sn-dotfiles"
-        apple_id {
-          username = "jon@lessknown.co.uk"
-          password = "@env:AC_PASSWORD"
-        }
-        sign {
-          application_identity = "Developer ID Application: Jonathan Hadfield (VBZY8FBYR5)"
-        }
-        zip {
-          output_path = "./dist/sn-dotfiles_Darwin_amd64.zip"
-        }
-        EOF
-        gon /tmp/sn-dotfiles-gon-amd64.hcl
-        '
 
-  - id: sn-dotfiles-macos-arm
-    main: ./cmd/sn-dotfiles/
-    binary: sn-dotfiles
+  - id: sn-sync-macos-arm
+    main: ./cmd/sn-sync/
+    binary: sn-sync
     goos:
       - darwin
     goarch:
@@ -53,25 +62,7 @@ builds:
       - -trimpath
     ldflags:
       - "-s -w -X main.version={{ .Version }} -X main.sha={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.tag={{ .Tag }}"
-    hooks:
-      post: |
-        sh -c '
-        cat > /tmp/sn-dotfiles-gon-arm64.hcl << EOF
-        source = ["./dist/sn-dotfiles-macos-arm_darwin_arm64/sn-dotfiles"]
-        bundle_id = "uk.co.lessknown.sn-dotfiles"
-        apple_id {
-          username = "jon@lessknown.co.uk"
-          password = "@env:AC_PASSWORD"
-        }
-        sign {
-          application_identity = "Developer ID Application: Jonathan Hadfield (VBZY8FBYR5)"
-        }
-        zip {
-          output_path = "./dist/sn-dotfiles_Darwin_arm64.zip"
-        }
-        EOF
-        gon /tmp/sn-dotfiles-gon-arm64.hcl
-        '
+
   - id: sn-dotfiles
     main: ./cmd/sn-dotfiles/
     binary: sn-dotfiles
@@ -127,4 +118,6 @@ changelog:
     - ignore
 
 checksum:
+  extra_files:
+    - glob: ./dist/sn-dotfiles_Darwin*.zip
   name_template: 'checksums.txt'
