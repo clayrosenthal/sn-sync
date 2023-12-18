@@ -3,7 +3,7 @@ package snsync
 import (
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
@@ -277,7 +277,7 @@ func createItem(path, title string) (item items.Note, err error) {
 
 	var localBytes []byte
 
-	localBytes, err = ioutil.ReadAll(file)
+	localBytes, err = io.ReadAll(file)
 	if err != nil {
 		return
 	}
@@ -314,24 +314,29 @@ func pathInfo(path string) (mode os.FileMode, pathSize int64, err error) {
 func discoverDotfilesInHome(home string, debug bool) (paths []string, err error) {
 	debugPrint(debug, fmt.Sprintf("discoverDotfilesInHome | checking home: %s", home))
 
-	var homeEntries []os.FileInfo
+	var homeEntries []os.DirEntry
 
-	homeEntries, err = ioutil.ReadDir(home)
+	homeEntries, err = os.ReadDir(home)
 	if err != nil {
 		return
 	}
 
-	for _, f := range homeEntries {
-		if strings.HasPrefix(f.Name(), ".") {
-			var afp string
+	for _, entry := range homeEntries {
+		if strings.HasPrefix(entry.Name(), ".") {
+			var absoluteFilePath string
 
-			afp, err = filepath.Abs(home + string(os.PathSeparator) + f.Name())
+			absoluteFilePath, err = filepath.Abs(home + string(os.PathSeparator) + entry.Name())
 			if err != nil {
 				return
 			}
 
-			if f.Mode().IsRegular() {
-				paths = append(paths, afp)
+			info, err := os.Lstat(absoluteFilePath)
+			if err != nil {
+				return
+			}
+
+			if info.Mode().IsRegular() {
+				paths = append(paths, absoluteFilePath)
 			}
 		}
 	}

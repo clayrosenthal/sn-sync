@@ -225,6 +225,8 @@ github.com/jonhadfield/findexec v0.0.0-20190902195615-78db24cd4e77 h1:U1mtIepXhv
 github.com/jonhadfield/findexec v0.0.0-20190902195615-78db24cd4e77/go.mod h1:9Q9pFtVLzvgKEi8++fNhmSR7HpD9+9+dPy/SECsNB6k=
 github.com/jonhadfield/gosn-v2 v0.0.0-20211123204812-5a0242ddbf0d h1:h5DRMVBe2LOdx1EjhgXhRBypkbec4sn2e+UyoFzLt7o=
 github.com/jonhadfield/gosn-v2 v0.0.0-20211123204812-5a0242ddbf0d/go.mod h1:RCdMp/SFbMbpHc2y7VuL9GfPkiCCbpJEiFVaJhhs/yY=
+github.com/jonhadfield/gosn-v2 v0.0.0-20231217230122-7ad4020ae28b h1:bda/T+FFoy4Spv7+y+Vmj27Ads1IvHZvUJ69GCbaIf4=
+github.com/jonhadfield/gosn-v2 v0.0.0-20231217230122-7ad4020ae28b/go.mod h1:qqdCDCvEgB6kNNAObVojNMcf8r7ksmsjHvbTEFaI8uI=
 github.com/json-iterator/go v1.1.11/go.mod h1:KdQUCv79m/52Kvf8AW2vK1V8akMuk1QjK/uOdHXbAo4=
 github.com/jstemmer/go-junit-report v0.0.0-20190106144839-af01ea7f8024/go.mod h1:6v2b51hI/fHJwM22ozAgKL4VKDeJcHhJFhtBdhmNjmU=
 github.com/jstemmer/go-junit-report v0.9.1/go.mod h1:Brl9GWCQeLvo8nXZwPNNblvFj/XSXhF0NWZEnDohbsk=

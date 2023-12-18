@@ -11,7 +11,7 @@ require (
 	github.com/fatih/set v0.2.1
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
 	github.com/jonhadfield/findexec v0.0.0-20190902195615-78db24cd4e77
-	github.com/jonhadfield/gosn-v2 master
+	github.com/jonhadfield/gosn-v2 v0.0.0-20231217230122-7ad4020ae28b 
 	github.com/kr/text v0.2.0 // indirect
 	github.com/lithammer/shortuuid v3.0.0+incompatible
 	github.com/mitchellh/mapstructure v1.4.3 // indirect
