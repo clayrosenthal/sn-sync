@@ -55,8 +55,11 @@ critic:
 find-updates:
 	go list -u -m -json all | go-mod-outdated -update -direct
 
-release-test:
+release-snapshot:
 	goreleaser build --snapshot --clean --skip post-hooks
+
+release-test:
+	goreleaser build --snapshot --clean --skip post-hooks --single-target
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
