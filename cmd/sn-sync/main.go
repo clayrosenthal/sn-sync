@@ -11,7 +11,7 @@ import (
 
 	"github.com/jonhadfield/gosn-v2/cache"
 
-	// snsync "github.com/clayrosenthal/sn-sync"
+	snsync "github.com/clayrosenthal/sn-sync/sn-sync"
 
 	"github.com/spf13/viper"
 	"github.com/urfave/cli"
