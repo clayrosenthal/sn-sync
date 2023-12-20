@@ -22,7 +22,7 @@ var (
 // Sync compares local and remote items and then:
 // - pulls remotes if locals are older or missing
 // - pushes locals if remotes are newer
-func Sync(si SNDotfilesSyncInput, useStdErr bool) (so SyncOutput, err error) {
+func Sync(si SNDirSyncInput, useStdErr bool) (so SyncOutput, err error) {
 	if err = checkPathsExist(si.Exclude); err != nil {
 		return
 	}
@@ -45,7 +45,7 @@ func Sync(si SNDotfilesSyncInput, useStdErr bool) (so SyncOutput, err error) {
 
 	output, err := sync(syncInput{
 		session: si.Session,
-		home:    si.Home,
+		root:    si.Root,
 		paths:   si.Paths,
 		exclude: si.Exclude,
 		debug:   si.Debug,
@@ -87,7 +87,7 @@ func sync(input syncInput) (output syncOutput, err error) {
 		db:      cso.DB,
 		session: input.session,
 		twn:     remote,
-		home:    input.home,
+		root:    input.root,
 		paths:   input.paths,
 		exclude: input.exclude,
 		debug:   input.debug})
@@ -109,7 +109,7 @@ func sync(input syncInput) (output syncOutput, err error) {
 	return
 }
 
-type SNFileSyncInput struct {
+type SNDirSyncInput struct {
 	Session        *cache.Session
 	Root           string
 	Paths, Exclude []string

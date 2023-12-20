@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/jonhadfield/gosn-v2/cache"
+	"github.com/jonhadfield/gosn-v2/session"
 
 	snsync "github.com/clayrosenthal/sn-sync/sn-sync"
 
@@ -213,9 +214,9 @@ func startCLI(args []string) (msg string, display bool, err error) {
 			session.CacheDBPath = cacheDBPath
 
 			var so snsync.SyncOutput
-			so, err = snsync.Sync(snsync.SNDotfilesSyncInput{
+			so, err = snsync.Sync(snsync.SNDirSyncInput{
 				Session:  &session,
-				Home:     opts.home,
+				Root:     opts.home,
 				Paths:    c.Args(),
 				Exclude:  c.StringSlice("exclude"),
 				PageSize: opts.pageSize,
@@ -434,15 +435,15 @@ func startCLI(args []string) (msg string, display bool, err error) {
 				os.Exit(1)
 			}
 			if sAdd {
-				msg, err = auth.AddSession(opts.server, sessKey, nil, c.Bool("debug"))
+				msg, err = session.AddSession(opts.server, sessKey, nil, c.Bool("debug"))
 				return err
 			}
 			if sRemove {
-				msg = auth.RemoveSession(nil)
+				msg = session.RemoveSession(nil)
 				return nil
 			}
 			if sStatus {
-				msg, err = auth.SessionStatus(sessKey, nil)
+				msg, err = session.SessionStatus(sessKey, nil)
 			}
 			return err
 		},

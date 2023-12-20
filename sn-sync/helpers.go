@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/asdine/storm/v3"
-	"github.com/jonhadfield/gosn-v2/auth"
 	"github.com/jonhadfield/gosn-v2/cache"
 	"github.com/jonhadfield/gosn-v2/items"
 	"github.com/pkg/errors"
@@ -65,7 +64,7 @@ func addToDB(db *storm.DB, session *cache.Session, itemDiffs []ItemDiff, close b
 		return
 	}
 
-	return cache.SaveItems(db, session, dItems, close)
+	return cache.SaveItems(session, db, dItems, close)
 }
 
 func getTagIfExists(name string, twn tagsWithNotes) (tag items.Tag, found bool) {
@@ -105,7 +104,7 @@ func createMissingTags(db *storm.DB, session *cache.Session, pt string, twn tags
 		}
 	}
 
-	err = cache.SaveItems(db, session, itemsToPush, false)
+	err = cache.SaveItems(session, db, itemsToPush, false)
 	if err != nil {
 		return
 	}
@@ -165,7 +164,7 @@ func pushAndTag(db *storm.DB, session *cache.Session, tim map[string]items.Items
 			}
 		}
 	}
-	err = cache.SaveItems(db, session, itemsToPush, true)
+	err = cache.SaveItems(session, db, itemsToPush, true)
 	tagsPushed, notesPushed = getItemCounts(itemsToPush)
 
 	return tagsPushed, notesPushed, err
@@ -176,13 +175,14 @@ func getItemCounts(items items.Items) (tags, notes int) {
 }
 
 func createTag(name string) (tag items.Tag) {
-	dfTagContent := items.NewTagContent()
-	tag = items.NewTag()
-	dfTagContent.Title = name
-	tag.Content = *dfTagContent
-	tag.UUID = items.GenUUID()
+	//TODO populate references
+	var references items.ItemReferences
+	tag, err := items.NewTag(name, references)
+	if err != nil {
+		log.Fatal(err)
+	}
 
-	return
+	return tag
 }
 
 func createLocal(itemDiffs []ItemDiff) error {
@@ -536,21 +536,23 @@ func isUnencryptedSession(in string) bool {
 	return false
 }
 
-func ParseSessionString(in string) (email string, session auth.Session, err error) {
-	if !isUnencryptedSession(in) {
-		err = errors.New("session invalid, or encrypted and key was not provided")
-		return
-	}
+// Defined in gosn/session now
 
-	parts := strings.Split(in, ";")
-	email = parts[0]
-	session = auth.Session{
-		Token:  parts[2],
-		Server: parts[1],
-	}
+// func ParseSessionString(in string) (email string, session cache.Session, err error) {
+// 	if !isUnencryptedSession(in) {
+// 		err = errors.New("session invalid, or encrypted and key was not provided")
+// 		return
+// 	}
 
-	return
-}
+// 	parts := strings.Split(in, ";")
+// 	email = parts[0]
+// 	session = cache.Session{
+// 		Token:  parts[2],
+// 		Server: parts[1],
+// 	}
+
+// 	return
+// }
 
 func StringInSlice(inStr string, inSlice []string, matchCase bool) bool {
 	for i := range inSlice {

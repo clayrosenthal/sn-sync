@@ -282,14 +282,15 @@ func createItem(path, title string) (item items.Note, err error) {
 		return
 	}
 
+	//TODO fill in references
+	var references items.ItemReferences
+
 	localStr := string(localBytes)
 	// addToDB item
-	item = items.NewNote()
-	itemContent := items.NewNoteContent()
-	item.Content = *itemContent
-	item.Content.SetTitle(title)
-	item.Content.SetText(localStr)
-	// prevent a default editor parsing as html when selected via app
+	item, err = items.NewNote(title, localStr, references)
+	if err != nil {
+		return
+	}
 	item.Content.SetPrefersPlainEditor(true)
 
 	return item, err
@@ -324,13 +325,14 @@ func discoverDotfilesInHome(home string, debug bool) (paths []string, err error)
 	for _, entry := range homeEntries {
 		if strings.HasPrefix(entry.Name(), ".") {
 			var absoluteFilePath string
+			var info os.FileInfo
 
 			absoluteFilePath, err = filepath.Abs(home + string(os.PathSeparator) + entry.Name())
 			if err != nil {
 				return
 			}
 
-			info, err := os.Lstat(absoluteFilePath)
+			info, err = os.Lstat(absoluteFilePath)
 			if err != nil {
 				return
 			}

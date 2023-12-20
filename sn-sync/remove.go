@@ -186,7 +186,7 @@ func removeFromDB(input removeInput) error {
 	}
 
 	var err error
-	if err = cache.SaveItems(input.session.CacheDB, input.session, itemsToRemove, true); err != nil {
+	if err = cache.SaveItems(input.session, input.session.CacheDB, itemsToRemove, true); err != nil {
 		return err
 	}
 
