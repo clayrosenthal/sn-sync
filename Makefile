@@ -29,25 +29,25 @@ BUILD_SHA := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u '+%Y/%m/%d:%H:%M:%S')
 
 build:
-	GOOS=darwin CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_darwin_amd64" cmd/sn-dotfiles/main.go
+	GOOS=darwin CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_darwin_amd64" cmd/sn-sync/main.go
 
 build-all:
-	GOOS=darwin  CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_darwin_amd64" cmd/sn-dotfiles/main.go
-	GOOS=linux   CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_linux_amd64" cmd/sn-dotfiles/main.go
-	GOOS=linux   CGO_ENABLED=0 GOARCH=arm   go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_linux_arm" cmd/sn-dotfiles/main.go
-	GOOS=linux   CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_linux_arm64" cmd/sn-dotfiles/main.go
-	GOOS=netbsd  CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_netbsd_amd64" cmd/sn-dotfiles/main.go
-	GOOS=openbsd CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_openbsd_amd64" cmd/sn-dotfiles/main.go
-	GOOS=freebsd CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_freebsd_amd64" cmd/sn-dotfiles/main.go
+	GOOS=darwin  CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_darwin_amd64" cmd/sn-sync/main.go
+	GOOS=linux   CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_linux_amd64" cmd/sn-sync/main.go
+	GOOS=linux   CGO_ENABLED=0 GOARCH=arm   go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_linux_arm" cmd/sn-sync/main.go
+	GOOS=linux   CGO_ENABLED=0 GOARCH=arm64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_linux_arm64" cmd/sn-sync/main.go
+	GOOS=netbsd  CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_netbsd_amd64" cmd/sn-sync/main.go
+	GOOS=openbsd CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_openbsd_amd64" cmd/sn-sync/main.go
+	GOOS=freebsd CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_freebsd_amd64" cmd/sn-sync/main.go
 
 build-linux:
-	GOOS=linux CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-dotfiles_linux_amd64" cmd/sn-dotfiles/main.go
+	GOOS=linux CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_linux_amd64" cmd/sn-sync/main.go
 
 mac-install: build
-	install .local_dist/sn-dotfiles_darwin_amd64 /usr/local/bin/sn-dotfiles
+	install .local_dist/sn-sync_darwin_all /usr/local/bin/sn-sync
 
 linux-install: build-linux
-	sudo install .local_dist/sn-dotfiles_linux_amd64 /usr/local/bin/sn-dotfiles
+	sudo install .local_dist/sn-sync_linux_amd64 /usr/local/bin/sn-sync
 
 critic:
 	gocritic check-project .
