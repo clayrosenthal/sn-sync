@@ -12,11 +12,7 @@ before:
 
 # join mac binaries into one
 universal_binaries:
-  - id: sn-sync-macos
-    ids:
-      - sn-sync-macos-amd64
-      - sn-sync-macos-arm
-    name_template: "sn"
+  - name_template: "sn-sync"
     replace: true
     mod_timestamp: "{{ .CommitTimestamp }}"
     hooks:
@@ -39,38 +35,12 @@ universal_binaries:
         '
 
 builds:
-  - id: sn-sync-macos-amd64
-    main: ./cmd/sn-sync/
-    binary: sn-sync
-    goos:
-      - darwin
-    goarch:
-      - amd64
-    flags:
-      - -trimpath
-    ldflags:
-      - "-s -w -X main.version={{ .Version }} -X main.sha={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.tag={{ .Tag }}"
-
-  - id: sn-sync-macos-arm
-    main: ./cmd/sn-sync/
-    binary: sn-sync
-    goos:
-      - darwin
-    goarch:
-      - arm64
-    flags:
-      - -trimpath
-    ldflags:
-      - "-s -w -X main.version={{ .Version }} -X main.sha={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.tag={{ .Tag }}"
-
   - id: sn-sync
     main: ./cmd/sn-sync/
     binary: sn-sync
     goos:
       - linux
-      - freebsd
-      - openbsd
-      - netbsd
+      - darwin
     goarch:
       - amd64
       - arm64
@@ -83,20 +53,27 @@ builds:
       - "-s -w -X main.version={{ .Version }} -X main.sha={{ .ShortCommit }} -X main.buildDate={{ .Date }} -X main.tag={{ .Tag }}"
 
 archives:
-  - name_template: "{{ .ProjectName }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}"
-    replacements:
-      linux: Linux
-      386: i386
-      amd64: x86_64
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- if eq .Os "linux" }}Linux_
+      {{- else if eq .Os "windows" }}Windows_
+      {{- else }}{{- tolower .Os }}_{{ end -}}
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end -}}
+      {{ if .Arm }}v{{ .Arm }}{{ end -}}
     builds:
       - sn-sync
     format: tar.gz
+    format_overrides:
+      - goos: windows
+        format: zip
     files:
       - none*
 
 release:
   github:
-    owner: jonhadfield
+    owner: clayrosenthal
     name: sn-sync
   prerelease: auto
   name_template: '{{ .Tag }}'

@@ -29,7 +29,7 @@ BUILD_SHA := $(shell git rev-parse --short HEAD)
 BUILD_DATE := $(shell date -u '+%Y/%m/%d:%H:%M:%S')
 
 build:
-	GOOS=darwin CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_darwin_amd64" cmd/sn-sync/main.go
+	CGO_ENABLED=0 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync" cmd/sn-sync/main.go
 
 build-all:
 	GOOS=darwin  CGO_ENABLED=0 GOARCH=amd64 go build -ldflags '-s -w -X "main.version=[$(BUILD_TAG)-$(BUILD_SHA)] $(BUILD_DATE) UTC"' -o ".local_dist/sn-sync_darwin_amd64" cmd/sn-sync/main.go
@@ -54,6 +54,9 @@ critic:
 
 find-updates:
 	go list -u -m -json all | go-mod-outdated -update -direct
+
+release-test:
+	goreleaser build --snapshot --clean --skip post-hooks
 
 help:
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
