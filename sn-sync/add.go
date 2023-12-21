@@ -105,7 +105,7 @@ func Add(ai AddInput, useStdErr bool) (ao AddOutput, err error) {
 
 type AddInput struct {
 	Session  *cache.Session
-	Home     string
+	Root     string
 	Paths    []string
 	All      bool
 	Twn      tagsWithNotes

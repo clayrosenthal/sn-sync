@@ -10,7 +10,7 @@ import (
 	"github.com/jonhadfield/gosn-v2/items"
 )
 
-func WipeDotfileTagsAndNotes(session *cache.Session, pageSize int, useStdErr bool) (int, error) {
+func WipeDirTagsAndNotes(session *cache.Session, topTag string, pageSize int, useStdErr bool) (int, error) {
 	if session.Valid() && !session.Debug {
 		prefix := HiWhite("syncing ")
 		if _, err := os.Stat(session.CacheDBPath); os.IsNotExist(err) {
@@ -63,7 +63,7 @@ func WipeDotfileTagsAndNotes(session *cache.Session, pageSize int, useStdErr boo
 		}
 	}
 
-	debugPrint(session.Debug, fmt.Sprintf("WipeDotfileTagsAndNotes | removing %d items", len(itemsToRemove)))
+	debugPrint(session.Debug, fmt.Sprintf("WipeDirTagsAndNotes | removing %d items", len(itemsToRemove)))
 
 	if len(itemsToRemove) == 0 {
 		return 0, nil
