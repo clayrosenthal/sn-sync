@@ -24,8 +24,8 @@ func Add(ai AddInput, useStdErr bool) (ao AddOutput, err error) {
 		return
 	}
 
-	if StringInSlice(ai.Home, []string{"/", "/home"}, true) {
-		err = errors.New(fmt.Sprintf("not a good idea to use '%s' as home dir", ai.Home))
+	if StringInSlice(ai.Root, []string{"/", "/home"}, true) {
+		err = errors.New(fmt.Sprintf("not a good idea to use '%s' as home dir", ai.Root))
 		return
 	}
 
@@ -33,7 +33,7 @@ func Add(ai AddInput, useStdErr bool) (ao AddOutput, err error) {
 	if ai.All {
 		noRecurse = true
 
-		ai.Paths, err = discoverDotfilesInHome(ai.Home, ai.Session.Debug)
+		ai.Paths, err = discoverDotfilesInHome(ai.Root, ai.Session.Debug)
 		if err != nil {
 			return
 		}
@@ -44,7 +44,7 @@ func Add(ai AddInput, useStdErr bool) (ao AddOutput, err error) {
 		return ao, errors.New("paths not defined")
 	}
 
-	ai.Paths, err = preflight(ai.Home, ai.Paths)
+	ai.Paths, err = preflight(ai.Root, ai.Paths)
 	if err != nil {
 		return
 	}
@@ -135,7 +135,7 @@ func add(db *storm.DB, ai AddInput, noRecurse bool) (ao AddOutput, err error) {
 
 	var statusLines []string
 
-	statusLines, tagToItemMap, ao.PathsAdded, ao.PathsExisting, err = generateTagItemMap(fsPathsToAdd, ai.Home, ai.Twn)
+	statusLines, tagToItemMap, ao.PathsAdded, ao.PathsExisting, err = generateTagItemMap(fsPathsToAdd, ai.Root, ai.Twn)
 	if err != nil {
 		return
 	}

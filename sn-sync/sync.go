@@ -117,13 +117,6 @@ type SNDirSyncInput struct {
 	Debug          bool
 }
 
-type SNDotfilesSyncInput struct {
-	Session        *cache.Session
-	Home           string
-	Paths, Exclude []string
-	PageSize       int
-	Debug          bool
-}
 type SyncOutput struct {
 	NoPushed, NoPulled int
 	Msg                string
@@ -149,26 +142,26 @@ func syncDBwithFS(si syncInput) (so syncOutput, err error) {
 	var itemsToSync bool
 	for _, itemDiff := range itemDiffs {
 		// check if itemDiff is for a path to be excluded
-		if matchesPathsToExclude(si.root, itemDiff.homeRelPath, si.exclude) {
-			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | excluding: %s", itemDiff.homeRelPath))
+		if matchesPathsToExclude(si.root, itemDiff.rootRelPath, si.exclude) {
+			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | excluding: %s", itemDiff.rootRelPath))
 			continue
 		}
 
 		switch itemDiff.diff {
 		case localNewer:
 			//addToDB
-			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | local %s is newer", itemDiff.homeRelPath))
+			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | local %s is newer", itemDiff.rootRelPath))
 			itemDiff.remote.Content.SetText(itemDiff.local)
 			itemsToPush = append(itemsToPush, itemDiff)
 			itemsToSync = true
 		case localMissing:
 			// createLocal
-			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | %s is missing", itemDiff.homeRelPath))
+			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | %s is missing", itemDiff.rootRelPath))
 			itemsToPull = append(itemsToPull, itemDiff)
 			itemsToSync = true
 		case remoteNewer:
 			// createLocal
-			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | remote %s is newer", itemDiff.homeRelPath))
+			debugPrint(si.debug, fmt.Sprintf("syncDBwithFS | remote %s is newer", itemDiff.rootRelPath))
 			itemsToPull = append(itemsToPull, itemDiff)
 			itemsToSync = true
 		}
@@ -194,7 +187,7 @@ func syncDBwithFS(si syncInput) (so syncOutput, err error) {
 	strPulled := green("pulled")
 
 	for i, pushItem := range itemsToPush {
-		line := fmt.Sprintf("%s | %s", bold(addDot(pushItem.homeRelPath)), strPushed)
+		line := fmt.Sprintf("%s | %s", bold(addDot(pushItem.rootRelPath)), strPushed)
 		res[i] = line
 	}
 
@@ -206,7 +199,7 @@ func syncDBwithFS(si syncInput) (so syncOutput, err error) {
 	so.noPulled = len(itemsToPull)
 
 	for _, pullItem := range itemsToPull {
-		line := fmt.Sprintf("%s | %s\n", bold(addDot(pullItem.homeRelPath)), strPulled)
+		line := fmt.Sprintf("%s | %s\n", bold(addDot(pullItem.rootRelPath)), strPulled)
 		res = append(res, line)
 	}
 
@@ -238,15 +231,15 @@ func ensureTrailingPathSep(in string) string {
 	return in + string(os.PathSeparator)
 }
 
-func matchesPathsToExclude(home, path string, pathsToExclude []string) bool {
+func matchesPathsToExclude(root, path string, pathsToExclude []string) bool {
 	for _, pte := range pathsToExclude {
-		homeStrippedPath := stripHome(pte, home)
+		rootStrippedPath := stripHome(pte, root)
 		// return match if Paths match exactly
-		if homeStrippedPath == path {
+		if rootStrippedPath == path {
 			return true
 		}
 		// return match if pte is a parent of the path
-		if strings.HasPrefix(path, ensureTrailingPathSep(homeStrippedPath)) {
+		if strings.HasPrefix(path, ensureTrailingPathSep(rootStrippedPath)) {
 			return true
 		}
 	}

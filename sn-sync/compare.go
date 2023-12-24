@@ -10,8 +10,8 @@ import (
 	"github.com/jonhadfield/gosn-v2/items"
 )
 
-func compare(remote tagsWithNotes, home string, paths, exclude []string, debug bool) (diffs []ItemDiff, err error) {
-	debugPrint(debug, fmt.Sprintf("compare | Home: %s", home))
+func compare(remote tagsWithNotes, root string, paths, exclude []string, debug bool) (diffs []ItemDiff, err error) {
+	debugPrint(debug, fmt.Sprintf("compare | Home: %s", root))
 	debugPrint(debug, fmt.Sprintf("compare | %d Paths to include supplied", len(paths)))
 	debugPrint(debug, fmt.Sprintf("compare | %d Paths to Exclude supplied", len(exclude)))
 	// fail immediately if remote or Paths are empty
@@ -19,7 +19,7 @@ func compare(remote tagsWithNotes, home string, paths, exclude []string, debug b
 		return nil, fmt.Errorf("tags with notes not supplied")
 	}
 
-	paths, err = preflight(home, paths)
+	paths, err = preflight(root, paths)
 	if err != nil {
 		return
 	}
@@ -28,7 +28,7 @@ func compare(remote tagsWithNotes, home string, paths, exclude []string, debug b
 
 	var remotePaths []string
 	// check remotes against local filesystem
-	itemDiffs, remotePaths, err = compareRemoteWithLocalFS(remote, paths, home, debug)
+	itemDiffs, remotePaths, err = compareRemoteWithLocalFS(remote, paths, root, debug)
 	if err != nil {
 		return
 	}
@@ -36,13 +36,13 @@ func compare(remote tagsWithNotes, home string, paths, exclude []string, debug b
 	// if Paths specified, then discover those that are untracked
 	// by comparing with existing remote equivalent Paths
 	if len(paths) > 0 {
-		itemDiffs = append(itemDiffs, findUntracked(paths, remotePaths, home, debug)...)
+		itemDiffs = append(itemDiffs, findUntracked(paths, remotePaths, root, debug)...)
 	}
 
 	return itemDiffs, err
 }
 
-func compareRemoteWithLocalFS(remote tagsWithNotes, paths []string, home string, debug bool) (itemDiffs []ItemDiff, remotePaths []string, err error) {
+func compareRemoteWithLocalFS(remote tagsWithNotes, paths []string, root string, debug bool) (itemDiffs []ItemDiff, remotePaths []string, err error) {
 	// loop through remotes to generate a list of diffs for:
 	// - existing local and remotes
 	// - missing local files
@@ -53,12 +53,12 @@ func compareRemoteWithLocalFS(remote tagsWithNotes, paths []string, home string,
 
 		var dir string
 
-		dir, err = tagTitleToFSDir(twn.tag.Content.GetTitle(), home)
+		dir, err = tagTitleToFSDir(twn.tag.Content.GetTitle(), root)
 		if err != nil {
 			return
 		}
 
-		debugPrint(debug, fmt.Sprintf("compare | tag title: %s is path: <home>/%s", tagTitle, stripHome(dir, home)))
+		debugPrint(debug, fmt.Sprintf("compare | tag title: %s is path: <root>/%s", tagTitle, stripHome(dir, root)))
 		// if Paths were supplied, then check the determined dir is a prefix of one of those
 		if len(paths) > 0 && !pathIsPrefixOfPaths(dir, paths) {
 			continue
@@ -75,12 +75,12 @@ func compareRemoteWithLocalFS(remote tagsWithNotes, paths []string, home string,
 
 			if !localExists(fullPath) {
 				// local path matching tag+note doesn't exist so set as 'local missing'
-				debugPrint(debug, fmt.Sprintf("compare | local not found: <home>/%s", stripHome(fullPath, home)))
-				homeRelPath := stripHome(fullPath, home)
+				debugPrint(debug, fmt.Sprintf("compare | local not found: <root>/%s", stripHome(fullPath, root)))
+				rootRelPath := stripHome(fullPath, root)
 
 				itemDiffs = append(itemDiffs, ItemDiff{
 					tagTitle:    tagTitle,
-					homeRelPath: homeRelPath,
+					rootRelPath: rootRelPath,
 					path:        fullPath,
 					diff:        localMissing,
 					noteTitle:   d.Content.GetTitle(),
@@ -88,9 +88,9 @@ func compareRemoteWithLocalFS(remote tagsWithNotes, paths []string, home string,
 				})
 			} else {
 				// local does exist, so compareNoteWithFile and store generated compare
-				debugPrint(debug, fmt.Sprintf("compare | local found: <home>/%s", stripHome(fullPath, home)))
+				debugPrint(debug, fmt.Sprintf("compare | local found: <root>/%s", stripHome(fullPath, root)))
 				remotePaths = append(remotePaths, fullPath)
-				itemDiffs = append(itemDiffs, compareNoteWithFile(tagTitle, fullPath, home, d, debug))
+				itemDiffs = append(itemDiffs, compareNoteWithFile(tagTitle, fullPath, root, d, debug))
 			}
 		}
 	}
@@ -98,9 +98,9 @@ func compareRemoteWithLocalFS(remote tagsWithNotes, paths []string, home string,
 	return itemDiffs, remotePaths, err
 }
 
-func compareNoteWithFile(tagTitle, path, home string, remote items.Note, debug bool) ItemDiff {
-	debugPrint(debug, fmt.Sprintf("compareNoteWithFile | title: %s path: <home>/%s",
-		tagTitle, stripHome(path, home)))
+func compareNoteWithFile(tagTitle, path, root string, remote items.Note, debug bool) ItemDiff {
+	debugPrint(debug, fmt.Sprintf("compareNoteWithFile | title: %s path: <root>/%s",
+		tagTitle, stripHome(path, root)))
 
 	localStat, err := os.Stat(path)
 	if err != nil {
@@ -127,7 +127,7 @@ func compareNoteWithFile(tagTitle, path, home string, remote items.Note, debug b
 		log.Fatal(err)
 	}
 
-	homeRelPath := stripHome(path, home)
+	rootRelPath := stripHome(path, root)
 
 	localStr := string(localBytes)
 	if localStr != remote.Content.GetText() {
@@ -146,7 +146,7 @@ func compareNoteWithFile(tagTitle, path, home string, remote items.Note, debug b
 			return ItemDiff{
 				tagTitle:    tagTitle,
 				path:        path,
-				homeRelPath: homeRelPath,
+				rootRelPath: rootRelPath,
 				noteTitle:   remote.Content.GetTitle(),
 				diff:        localNewer,
 				local:       string(localBytes),
@@ -157,7 +157,7 @@ func compareNoteWithFile(tagTitle, path, home string, remote items.Note, debug b
 		return ItemDiff{
 			tagTitle:    tagTitle,
 			path:        path,
-			homeRelPath: homeRelPath,
+			rootRelPath: rootRelPath,
 			noteTitle:   remote.Content.GetTitle(),
 			diff:        remoteNewer,
 			local:       string(localBytes),
@@ -168,7 +168,7 @@ func compareNoteWithFile(tagTitle, path, home string, remote items.Note, debug b
 	return ItemDiff{
 		tagTitle:    tagTitle,
 		path:        path,
-		homeRelPath: homeRelPath,
+		rootRelPath: rootRelPath,
 		noteTitle:   remote.Content.GetTitle(),
 		diff:        identical,
 		local:       string(localBytes),

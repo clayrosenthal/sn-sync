@@ -16,9 +16,9 @@ import (
 // - remote items that are newer
 // - local items that are untracked (if Paths specified)
 // - identical local and remote items
-func Status(session *cache.Session, home string, paths []string, pageSize int, debug bool, useStdErr bool) (diffs []ItemDiff, msg string, err error) {
+func Status(session *cache.Session, root string, paths []string, pageSize int, debug bool, useStdErr bool) (diffs []ItemDiff, msg string, err error) {
 	// preflight checks
-	paths, err = preflight(home, paths)
+	paths, err = preflight(root, paths)
 	if err != nil {
 		return
 	}
@@ -57,10 +57,10 @@ func Status(session *cache.Session, home string, paths []string, pageSize int, d
 		return diffs, msg, err
 	}
 
-	return status(remote, home, paths, debug)
+	return status(remote, root, paths, debug)
 }
 
-func status(twn tagsWithNotes, home string, paths []string, debug bool) (diffs []ItemDiff, msg string, err error) {
+func status(twn tagsWithNotes, root string, paths []string, debug bool) (diffs []ItemDiff, msg string, err error) {
 	debugPrint(debug, fmt.Sprintf("status | %d remote items", len(twn)))
 
 	err = checkNoteTagConflicts(twn)
@@ -73,7 +73,7 @@ func status(twn tagsWithNotes, home string, paths []string, debug bool) (diffs [
 		return
 	}
 
-	diffs, err = compare(twn, home, paths, []string{}, debug)
+	diffs, err = compare(twn, root, paths, []string{}, debug)
 	if err != nil {
 		return diffs, msg, err
 	}
@@ -87,7 +87,7 @@ func status(twn tagsWithNotes, home string, paths []string, debug bool) (diffs [
 	lines := make([]string, len(diffs))
 
 	for i, diff := range diffs {
-		lines[i] = fmt.Sprintf("%s | %s \n", bold(diff.homeRelPath), colourDiff(diff.diff))
+		lines[i] = fmt.Sprintf("%s | %s \n", bold(diff.rootRelPath), colourDiff(diff.diff))
 	}
 
 	msg = columnize.SimpleFormat(lines)

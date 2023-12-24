@@ -23,7 +23,7 @@ const (
 	identical    = "identical"
 )
 
-func Diff(session *cache.Session, home string, paths []string, pageSize int, close, useStdErr bool) (diffs []ItemDiff, msg string, err error) {
+func Diff(session *cache.Session, root string, paths []string, pageSize int, close, useStdErr bool) (diffs []ItemDiff, msg string, err error) {
 	debugPrint(session.Debug, fmt.Sprintf("Diff | %d paths", len(paths)))
 
 	if !session.Debug {
@@ -63,21 +63,21 @@ func Diff(session *cache.Session, home string, paths []string, pageSize int, clo
 		return
 	}
 
-	return diff(remote, home, paths, session.Debug)
+	return diff(remote, root, paths, session.Debug)
 }
 
-// TODO: rename homeRelPath? relPath? rootRelPath?
+// TODO: rename rootRelPath? relPath? rootRelPath?
 type ItemDiff struct {
 	tagTitle    string
 	noteTitle   string
 	path        string
-	homeRelPath string
+	rootRelPath string
 	diff        string
 	remote      items.Note
 	local       string
 }
 
-func diff(twn tagsWithNotes, home string, paths []string, debug bool) (diffs []ItemDiff, msg string, err error) {
+func diff(twn tagsWithNotes, root string, paths []string, debug bool) (diffs []ItemDiff, msg string, err error) {
 	debugPrint(debug, fmt.Sprintf("diff | %d remote items", len(twn)))
 
 	err = checkNoteTagConflicts(twn)
@@ -96,7 +96,7 @@ func diff(twn tagsWithNotes, home string, paths []string, debug bool) (diffs []I
 		debugPrint(debug, fmt.Sprintf("diff | calling compare with Paths: %s", strings.Join(paths, ",")))
 	}
 
-	diffs, err = compare(twn, home, paths, []string{}, debug)
+	diffs, err = compare(twn, root, paths, []string{}, debug)
 	if err != nil {
 		return diffs, msg, err
 	}
@@ -187,7 +187,7 @@ func processContentDiffs(diffs []ItemDiff, tempDir, diffBinary string) (differen
 				panic(fmt.Sprintf("failed to compare: '%s' with '%s'", f1path, f2path))
 			}
 
-			fmt.Println(bold(diff.homeRelPath))
+			fmt.Println(bold(diff.rootRelPath))
 			fmt.Println(string(out))
 		}
 	}
@@ -258,10 +258,10 @@ func tagExists(title string, twn tagsWithNotes) bool {
 	return false
 }
 
-func findUntracked(paths, existingRemoteEquivalentPaths []string, home string, debug bool) (itemDiffs []ItemDiff) {
+func findUntracked(paths, existingRemoteEquivalentPaths []string, root string, debug bool) (itemDiffs []ItemDiff) {
 	// if path is directory, then walk to generate list of additional Paths
 	for _, path := range paths {
-		debugPrint(debug, fmt.Sprintf("compare | diffing path: %s", stripHome(path, home)))
+		debugPrint(debug, fmt.Sprintf("compare | diffing path: %s", stripHome(path, root)))
 
 		if StringInSlice(path, existingRemoteEquivalentPaths, true) {
 			continue
@@ -286,9 +286,9 @@ func findUntracked(paths, existingRemoteEquivalentPaths []string, home string, d
 				// add file as untracked
 				if stat, err := os.Stat(p); err == nil && !stat.IsDir() {
 					debugPrint(debug, fmt.Sprintf("compare | file is untracked: %s", p))
-					homeRelPath := stripHome(p, home)
+					rootRelPath := stripHome(p, root)
 					itemDiffs = append(itemDiffs, ItemDiff{
-						homeRelPath: homeRelPath,
+						rootRelPath: rootRelPath,
 						path:        p,
 						diff:        untracked,
 					})
@@ -299,11 +299,11 @@ func findUntracked(paths, existingRemoteEquivalentPaths []string, home string, d
 				return
 			}
 		} else {
-			homeRelPath := stripHome(path, home)
+			rootRelPath := stripHome(path, root)
 			debugPrint(debug, fmt.Sprintf("compare | file is untracked: %s", path))
 
 			itemDiffs = append(itemDiffs, ItemDiff{
-				homeRelPath: homeRelPath,
+				rootRelPath: rootRelPath,
 				path:        path,
 				diff:        untracked,
 			})

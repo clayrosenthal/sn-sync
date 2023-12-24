@@ -9,11 +9,11 @@ import (
 	"github.com/fatih/set"
 )
 
-// preflight validates and tidies up the home directory and paths provided
-func preflight(home string, in []string) (out []string, err error) {
-	// check home is present
-	if len(home) == 0 {
-		err = errors.New("home undefined")
+// preflight validates and tidies up the root directory and paths provided
+func preflight(root string, in []string) (out []string, err error) {
+	// check root is present
+	if len(root) == 0 {
+		err = errors.New("root undefined")
 		return
 	}
 
@@ -24,7 +24,7 @@ func preflight(home string, in []string) (out []string, err error) {
 	var v bool
 	for _, inPath := range in {
 		if strings.HasPrefix(inPath, "~") {
-			inPath = strings.Replace(inPath, "~", home, 1)
+			inPath = strings.Replace(inPath, "~", root, 1)
 			if v, err = pathValid(inPath); !v {
 				return
 			}
@@ -32,7 +32,7 @@ func preflight(home string, in []string) (out []string, err error) {
 			continue
 		}
 		if !strings.HasPrefix(inPath, "/") {
-			out = append(out, filepath.Join(home, inPath))
+			out = append(out, filepath.Join(root, inPath))
 			if v, err = pathValid(inPath); !v {
 				return
 			}

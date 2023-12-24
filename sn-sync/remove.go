@@ -14,7 +14,7 @@ import (
 
 type RemoveInput struct {
 	Session  *cache.Session
-	Home     string
+	Root     string
 	Paths    []string
 	PageSize int
 	Debug    bool
@@ -27,12 +27,12 @@ type RemoveOutput struct {
 
 // Remove stops tracking local Paths by removing the related notes from SN
 func Remove(ri RemoveInput, useStdErr bool) (ro RemoveOutput, err error) {
-	if StringInSlice(ri.Home, []string{"/", "/home"}, true) {
-		err = fmt.Errorf("not a good idea to use '%s' as home dir", ri.Home)
+	if StringInSlice(ri.Root, []string{"/", "/home"}, true) {
+		err = fmt.Errorf("not a good idea to use '%s' as home dir", ri.Root)
 		return
 	}
 
-	ri.Paths, err = preflight(ri.Home, ri.Paths)
+	ri.Paths, err = preflight(ri.Root, ri.Paths)
 	if err != nil {
 		return
 	}
@@ -46,7 +46,7 @@ func Remove(ri RemoveInput, useStdErr bool) (ro RemoveOutput, err error) {
 	ri.Paths = dedupe(ri.Paths)
 	debugPrint(ri.Debug, fmt.Sprintf("Remove | paths after dedupe: %d", len(ri.Paths)))
 
-	ri.Paths, err = preflight(ri.Home, ri.Paths)
+	ri.Paths, err = preflight(ri.Root, ri.Paths)
 
 	if !ri.Debug {
 		prefix := HiWhite("syncing ")
@@ -93,7 +93,7 @@ func Remove(ri RemoveInput, useStdErr bool) (ro RemoveOutput, err error) {
 	var notesToRemove items.Notes
 
 	for _, path := range ri.Paths {
-		homeRelPath, pathsToRemove, matchingItems := getNotesToRemove(path, ri.Home, twn, ri.Debug)
+		homeRelPath, pathsToRemove, matchingItems := getNotesToRemove(path, ri.Root, twn, ri.Debug)
 
 		debugPrint(ri.Debug, fmt.Sprintf("Remove | items matching path '%s': %d", path, len(matchingItems)))
 

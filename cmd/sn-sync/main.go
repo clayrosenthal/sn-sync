@@ -90,30 +90,51 @@ func main() {
 	os.Exit(0)
 }
 
-func addCmdFunc(c *cli.Context, dotfiles bool) error {
+func statusCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
 	var opts configOptsOutput
-	var msg string
-	opts, err := getOpts(c)
+	opts, err = getOpts(c)
 	if err != nil {
 		return err
 	}
-	display := opts.display
+	*display = opts.display
+
+	var session cache.Session
+	session, _, err = cache.GetSession(opts.useSession, opts.sessKey, opts.server, opts.debug)
+
+	var cacheDBPath string
+	cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
+	if err != nil {
+		return err
+	}
+	session.CacheDBPath = cacheDBPath
+
+	_, *msg, err = snsync.Status(&session, opts.home, c.Args(), opts.pageSize, opts.debug, false)
+	return err
+}
+
+func addCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
+	var opts configOptsOutput
+	opts, err = getOpts(c)
+	if err != nil {
+		return err
+	}
+	*display = opts.display
 
 	if dotfiles {
 		if !c.Bool("all") && len(c.Args()) == 0 {
-			msg = "error: either specify paths to add or --all to add everything"
+			*msg = "error: either specify paths to add or --all to add everything"
 			_ = cli.ShowCommandHelp(c, "add")
 			return nil
 		}
 
 		if c.Bool("all") && len(c.Args()) > 0 {
-			msg = "error: specifying --all and paths does not make sense"
+			*msg = "error: specifying --all and paths does not make sense"
 			_ = cli.ShowCommandHelp(c, "add")
 			return nil
 		}
 	} else {
 		if len(c.Args()) < 1 {
-			msg = "error: specify path(s) to add"
+			*msg = "error: specify path(s) to add"
 			_ = cli.ShowCommandHelp(c, "add")
 			return nil
 		}
@@ -127,7 +148,7 @@ func addCmdFunc(c *cli.Context, dotfiles bool) error {
 			return err
 		}
 		if dotfiles && !isValidDotfilePath(ap) {
-			msg = fmt.Sprintf("\"%s\" is not a valid dotfile path", path)
+			*msg = fmt.Sprintf("\"%s\" is not a valid dotfile path", path)
 			return nil
 		}
 		absPaths = append(absPaths, ap)
@@ -166,22 +187,21 @@ func addCmdFunc(c *cli.Context, dotfiles bool) error {
 		return err
 	}
 
-	msg = ao.Msg
+	*msg = ao.Msg
 
 	return err
 }
 
-func syncCmdFunc(c *cli.Context, dotfiles bool) error {
+func syncCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
 	var opts configOptsOutput
-	var msg string
-	opts, err := getOpts(c)
+	opts, err = getOpts(c)
 	if err != nil {
 		return err
 	}
-	display := opts.display
+	*display = opts.display
 
 	if len(c.Args()) < 1 {
-		msg = "error: specify path(s) to sync"
+		*msg = "error: specify path(s) to sync"
 		_ = cli.ShowCommandHelp(c, "sync")
 		return nil
 	}
@@ -219,25 +239,24 @@ func syncCmdFunc(c *cli.Context, dotfiles bool) error {
 	if err != nil {
 		return err
 	}
-	msg = so.Msg
+	*msg = so.Msg
 
 	return err
 }
 
-func removeCmdFunc(c *cli.Context, dotfiles bool) error {
-	var msg string
+func removeCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
 	if len(c.Args()) == 0 {
-		msg = "error: paths not specified"
+		*msg = "error: paths not specified"
 		_ = cli.ShowCommandHelp(c, "remove")
 		return nil
 	}
 
 	var opts configOptsOutput
-	opts, err := getOpts(c)
+	opts, err = getOpts(c)
 	if err != nil {
 		return err
 	}
-	display := opts.display
+	*display = opts.display
 
 	var session cache.Session
 	session, _, err = cache.GetSession(opts.useSession,
@@ -274,26 +293,25 @@ func removeCmdFunc(c *cli.Context, dotfiles bool) error {
 	if err != nil {
 		return err
 	}
-	msg = ro.Msg
+	*msg = ro.Msg
 
 	return err
 }
 
-func diffCmdFunc(c *cli.Context, dotfiles bool) error {
+func diffCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
 	var opts configOptsOutput
-	var msg string
 
 	if !dotfiles && len(c.Args()) < 1 {
-		msg = "error: specify path(s) to diff"
+		*msg = "error: specify path(s) to diff"
 		_ = cli.ShowCommandHelp(c, "diff")
 		return nil
 	}
 
-	opts, err := getOpts(c)
+	opts, err = getOpts(c)
 	if err != nil {
 		return err
 	}
-	display := opts.display
+	*display = opts.display
 
 	var session cache.Session
 	session, _, err = cache.GetSession(opts.useSession,
@@ -318,25 +336,24 @@ func diffCmdFunc(c *cli.Context, dotfiles bool) error {
 		paths = c.Args().Tail()
 	}
 
-	_, msg, err = snsync.Diff(&session, root, paths, opts.pageSize, true, c.Bool("no-stdout"))
+	_, *msg, err = snsync.Diff(&session, root, paths, opts.pageSize, true, c.Bool("no-stdout"))
 
 	return err
 }
 
-func wipeCmdFunc(c *cli.Context, dotfiles bool) error {
+func wipeCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
 	var opts configOptsOutput
-	var msg string
 	if !dotfiles && len(c.Args()) < 1 {
-		msg = "error: specify path(s) to wipe"
+		*msg = "error: specify path(s) to wipe"
 		_ = cli.ShowCommandHelp(c, "wipe")
 		return nil
 	}
 
-	opts, err := getOpts(c)
+	opts, err = getOpts(c)
 	if err != nil {
 		return err
 	}
-	display := opts.display
+	*display = opts.display
 
 	var email string
 	var session cache.Session
@@ -373,7 +390,7 @@ func wipeCmdFunc(c *cli.Context, dotfiles bool) error {
 		if err != nil {
 			return err
 		}
-		msg = fmt.Sprintf("%d removed", num)
+		*msg = fmt.Sprintf("%d removed", num)
 	} else {
 		return nil
 	}
@@ -448,31 +465,6 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		_, _ = fmt.Fprintf(c.App.Writer, "\ninvalid command: \"%s\" \n\n", command)
 		cli.ShowAppHelpAndExit(c, 1)
 	}
-	statusCmd := cli.Command{
-		Name:  "status",
-		Usage: "compare local and remote",
-		Action: func(c *cli.Context) error {
-			var opts configOptsOutput
-			opts, err = getOpts(c)
-			if err != nil {
-				return err
-			}
-			display = opts.display
-
-			var session cache.Session
-			session, _, err = cache.GetSession(opts.useSession, opts.sessKey, opts.server, opts.debug)
-
-			var cacheDBPath string
-			cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
-			if err != nil {
-				return err
-			}
-			session.CacheDBPath = cacheDBPath
-
-			_, msg, err = snsync.Status(&session, opts.home, c.Args(), opts.pageSize, opts.debug, false)
-			return err
-		},
-	}
 
 	dotfilesCmd := cli.Command{
 		Name:  "dotfiles",
@@ -494,7 +486,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 					},
 				},
 				Action: func(c *cli.Context) error {
-					return addCmdFunc(c, true)
+					return addCmdFunc(c, true, &msg, &display)
 				},
 			},
 			{
@@ -502,19 +494,34 @@ func startCLI(args []string) (msg string, display bool, err error) {
 				Aliases: []string{"rm"},
 				Usage:   "stop tracking dotfile(s)",
 				Action: func(c *cli.Context) error {
-					return removeCmdFunc(c, true)
+					return removeCmdFunc(c, true, &msg, &display)
 				},
 			},
 			{
 				Name:  "diff",
 				Usage: "display differences between local and remote",
 				Action: func(c *cli.Context) error {
-					return diffCmdFunc(c, true)
+					return diffCmdFunc(c, true, &msg, &display)
+				},
+			},
+			{
+				Name:  "status",
+				Usage: "compare dotfiles local and remote",
+				Action: func(c *cli.Context) error {
+					return statusCmdFunc(c, true, &msg, &display)
 				},
 			},
 		},
 		Action: func(c *cli.Context) error {
-			return syncCmdFunc(c, true)
+			return syncCmdFunc(c, true, &msg, &display)
+		},
+	}
+
+	statusCmd := cli.Command{
+		Name:  "status",
+		Usage: "compare local and remote",
+		Action: func(c *cli.Context) error {
+			return statusCmdFunc(c, false, &msg, &display)
 		},
 	}
 
@@ -535,7 +542,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 			}
 		},
 		Action: func(c *cli.Context) error {
-			return syncCmdFunc(c, false)
+			return syncCmdFunc(c, false, &msg, &display)
 		},
 	}
 
@@ -543,7 +550,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		Name:  "add",
 		Usage: "upload file(s)",
 		Action: func(c *cli.Context) error {
-			return addCmdFunc(c, false)
+			return addCmdFunc(c, false, &msg, &display)
 		},
 	}
 
@@ -552,7 +559,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		Aliases: []string{"rm"},
 		Usage:   "stop tracking file(s)",
 		Action: func(c *cli.Context) error {
-			return removeCmdFunc(c, false)
+			return removeCmdFunc(c, false, &msg, &display)
 		},
 	}
 
@@ -560,7 +567,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		Name:  "diff",
 		Usage: "display differences between local and remote",
 		Action: func(c *cli.Context) error {
-			return diffCmdFunc(c, false)
+			return diffCmdFunc(c, false, &msg, &display)
 		},
 	}
 
@@ -584,7 +591,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		},
 		Hidden: true,
 		Action: func(c *cli.Context) error {
-			return wipeCmdFunc(c, false)
+			return wipeCmdFunc(c, false, &msg, &display)
 		},
 	}
 
