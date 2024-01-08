@@ -9,13 +9,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/jonhadfield/gosn-v2/cache"
-	"github.com/jonhadfield/gosn-v2/session"
-
 	snsync "github.com/clayrosenthal/sn-sync/sn-sync"
 
+	"github.com/gookit/color"
 	"github.com/spf13/viper"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v2"
 )
 
 // overwritten at build time
@@ -33,6 +31,18 @@ type configOptsOutput struct {
 	debug      bool
 }
 
+func printErrorMsg(c *cli.Context, err error) {
+	_, _ = fmt.Fprintf(c.App.Writer, color.Red.Sprintf(err.Error()))
+}
+
+func printWarnMsg(c *cli.Context, msg string) {
+	_, _ = fmt.Fprintf(c.App.Writer, color.Yellow.Sprintf(msg))
+}
+
+func printSuccessMsg(c *cli.Context, msg string) {
+	_, _ = fmt.Fprintf(c.App.Writer, color.Green.Sprintf(msg))
+}
+
 func getOpts(c *cli.Context) (out configOptsOutput, err error) {
 	out.useStdOut = c.Bool("no-stdout")
 
@@ -46,10 +56,10 @@ func getOpts(c *cli.Context) (out configOptsOutput, err error) {
 
 	out.sessKey = c.String("session-key")
 
-	out.server = c.String("server")
 	if viper.GetString("server") != "" {
 		out.server = viper.GetString("server")
 	}
+	out.server = c.String("server")
 
 	out.cacheDBDir = viper.GetString("cachedb_dir")
 	if out.cacheDBDir != "" {
@@ -77,330 +87,27 @@ func getOpts(c *cli.Context) (out configOptsOutput, err error) {
 }
 
 func main() {
-	msg, display, err := startCLI(os.Args)
-	if err != nil {
-		fmt.Printf("error: %+v\n", err)
+	if err := startCLI(os.Args); err != nil {
+		fmt.Println(err)
 		os.Exit(1)
-	}
-
-	if display && msg != "" {
-		fmt.Println(msg)
 	}
 
 	os.Exit(0)
 }
 
-func statusCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
-	var opts configOptsOutput
-	opts, err = getOpts(c)
-	if err != nil {
-		return err
-	}
-	*display = opts.display
+func startCLI(args []string) (err error) {
+	app := appSetup()
 
-	var session cache.Session
-	session, _, err = cache.GetSession(opts.useSession, opts.sessKey, opts.server, opts.debug)
+	sort.Sort(cli.FlagsByName(app.Flags))
 
-	var cacheDBPath string
-	cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
-	if err != nil {
-		return err
-	}
-	session.CacheDBPath = cacheDBPath
-
-	_, *msg, err = snsync.Status(&session, opts.home, c.Args(), opts.pageSize, opts.debug, false)
-	return err
+	return app.Run(args)
 }
 
-func addCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
-	var opts configOptsOutput
-	opts, err = getOpts(c)
-	if err != nil {
-		return err
-	}
-	*display = opts.display
-
-	if dotfiles {
-		if !c.Bool("all") && len(c.Args()) == 0 {
-			*msg = "error: either specify paths to add or --all to add everything"
-			_ = cli.ShowCommandHelp(c, "add")
-			return nil
-		}
-
-		if c.Bool("all") && len(c.Args()) > 0 {
-			*msg = "error: specifying --all and paths does not make sense"
-			_ = cli.ShowCommandHelp(c, "add")
-			return nil
-		}
-	} else {
-		if len(c.Args()) < 1 {
-			*msg = "error: specify path(s) to add"
-			_ = cli.ShowCommandHelp(c, "add")
-			return nil
-		}
-	}
-
-	var absPaths []string
-	for _, path := range c.Args() {
-		var ap string
-		ap, err = filepath.Abs(path)
-		if err != nil {
-			return err
-		}
-		if dotfiles && !isValidDotfilePath(ap) {
-			*msg = fmt.Sprintf("\"%s\" is not a valid dotfile path", path)
-			return nil
-		}
-		absPaths = append(absPaths, ap)
-	}
-
-	var session cache.Session
-	session, _, err = cache.GetSession(opts.useSession,
-		opts.sessKey, opts.server, opts.debug)
-	var cacheDBPath string
-	cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
-	if err != nil {
-		return err
-	}
-	session.CacheDBPath = cacheDBPath
-
-	var root string
-	if dotfiles {
-		root = opts.home
-	} else {
-		// maybe should be cwd
-		root = c.Args().Get(0)
-	}
-
-	ai := snsync.AddInput{
-		Session:  &session,
-		Root:     root,
-		Paths:    absPaths,
-		PageSize: opts.pageSize,
-		All:      c.Bool("all"),
-	}
-
-	var ao snsync.AddOutput
-
-	ao, err = snsync.Add(ai, true)
-	if err != nil {
-		return err
-	}
-
-	*msg = ao.Msg
-
-	return err
-}
-
-func syncCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
-	var opts configOptsOutput
-	opts, err = getOpts(c)
-	if err != nil {
-		return err
-	}
-	*display = opts.display
-
-	if len(c.Args()) < 1 {
-		*msg = "error: specify path(s) to sync"
-		_ = cli.ShowCommandHelp(c, "sync")
-		return nil
-	}
-
-	var session cache.Session
-	session, _, err = cache.GetSession(opts.useSession,
-		opts.sessKey, opts.server, opts.debug)
-	var cacheDBPath string
-	cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
-	if err != nil {
-		return err
-	}
-	session.CacheDBPath = cacheDBPath
-
-	var root string
-	var paths []string
-	if dotfiles {
-		root = opts.home
-		paths = c.Args()
-	} else {
-		root = c.Args().Get(0)
-		paths = c.Args().Tail()
-	}
-
-	var so snsync.SyncOutput
-	so, err = snsync.Sync(snsync.SNDirSyncInput{
-		Session:  &session,
-		Root:     root,
-		Paths:    paths,
-		Exclude:  c.StringSlice("exclude"),
-		PageSize: opts.pageSize,
-		Debug:    opts.debug,
-	}, c.Bool("no-stdout"))
-
-	if err != nil {
-		return err
-	}
-	*msg = so.Msg
-
-	return err
-}
-
-func removeCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
-	if len(c.Args()) == 0 {
-		*msg = "error: paths not specified"
-		_ = cli.ShowCommandHelp(c, "remove")
-		return nil
-	}
-
-	var opts configOptsOutput
-	opts, err = getOpts(c)
-	if err != nil {
-		return err
-	}
-	*display = opts.display
-
-	var session cache.Session
-	session, _, err = cache.GetSession(opts.useSession,
-		opts.sessKey, opts.server,
-		opts.debug)
-	var cacheDBPath string
-	cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
-	if err != nil {
-		return err
-	}
-	session.CacheDBPath = cacheDBPath
-
-	var root string
-	var paths []string
-	if dotfiles {
-		root = opts.home
-		paths = c.Args()
-	} else {
-		root = c.Args().Get(0)
-		paths = c.Args().Tail()
-	}
-
-	ri := snsync.RemoveInput{
-		Session:  &session,
-		Root:     root,
-		Paths:    paths,
-		PageSize: opts.pageSize,
-		Debug:    opts.debug,
-	}
-
-	var ro snsync.RemoveOutput
-
-	ro, err = snsync.Remove(ri, c.Bool("no-stdout"))
-	if err != nil {
-		return err
-	}
-	*msg = ro.Msg
-
-	return err
-}
-
-func diffCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
-	var opts configOptsOutput
-
-	if !dotfiles && len(c.Args()) < 1 {
-		*msg = "error: specify path(s) to diff"
-		_ = cli.ShowCommandHelp(c, "diff")
-		return nil
-	}
-
-	opts, err = getOpts(c)
-	if err != nil {
-		return err
-	}
-	*display = opts.display
-
-	var session cache.Session
-	session, _, err = cache.GetSession(opts.useSession,
-		opts.sessKey, opts.server, opts.debug)
-
-	var cacheDBPath string
-
-	cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
-	if err != nil {
-		return err
-	}
-
-	session.CacheDBPath = cacheDBPath
-
-	var root string
-	var paths []string
-	if dotfiles {
-		root = opts.home
-		paths = c.Args()
-	} else {
-		root = c.Args().Get(0)
-		paths = c.Args().Tail()
-	}
-
-	_, *msg, err = snsync.Diff(&session, root, paths, opts.pageSize, true, c.Bool("no-stdout"))
-
-	return err
-}
-
-func wipeCmdFunc(c *cli.Context, dotfiles bool, msg *string, display *bool) (err error) {
-	var opts configOptsOutput
-	if !dotfiles && len(c.Args()) < 1 {
-		*msg = "error: specify path(s) to wipe"
-		_ = cli.ShowCommandHelp(c, "wipe")
-		return nil
-	}
-
-	opts, err = getOpts(c)
-	if err != nil {
-		return err
-	}
-	*display = opts.display
-
-	var email string
-	var session cache.Session
-	session, email, err = cache.GetSession(opts.useSession,
-		opts.sessKey, opts.server,
-		opts.debug)
-	var cacheDBPath string
-	cacheDBPath, err = cache.GenCacheDBPath(session, opts.cacheDBDir, snsync.SNAppName)
-	if err != nil {
-		return err
-	}
-	session.CacheDBPath = cacheDBPath
-
-	var root string
-	if dotfiles {
-		root = opts.home
-	} else {
-		root = c.Args().Get(0)
-	}
-	var proceed bool
-	if c.Bool("force") {
-		proceed = true
-	} else {
-		fmt.Printf("wipe all sync for account %s? ", email)
-		var input string
-		_, err = fmt.Scanln(&input)
-		if err == nil && snsync.StringInSlice(input, []string{"y", "yes"}, false) {
-			proceed = true
-		}
-	}
-	if proceed {
-		var num int
-		num, err = snsync.WipeDirTagsAndNotes(&session, root, opts.pageSize, c.Bool("no-stdout"))
-		if err != nil {
-			return err
-		}
-		*msg = fmt.Sprintf("%d removed", num)
-	} else {
-		return nil
-	}
-
-	return err
-}
-
-func startCLI(args []string) (msg string, display bool, err error) {
+func appSetup() (err error) {
 	viper.SetEnvPrefix("sn")
+	viper.AutomaticEnv()
 
+	//TODO: figure out if these can be removed, what auto env does
 	err = viper.BindEnv("email")
 	if err != nil {
 		return "", false, err
@@ -438,7 +145,7 @@ func startCLI(args []string) (msg string, display bool, err error) {
 	app.Name = "sn-sync"
 	app.Version = versionOutput
 	app.Compiled = time.Now()
-	app.Authors = []cli.Author{
+	app.Authors = []*cli.Author{
 		{
 			Name:  "Jon Hadfield",
 			Email: "jon@lessknown.co.uk",
@@ -449,231 +156,42 @@ func startCLI(args []string) (msg string, display bool, err error) {
 		},
 	}
 	app.HelpName = "-"
-	app.Usage = "sync directories and files with Standard Notes"
+	app.Usage = "Sync directories and files with Standard Notes"
 	app.Description = ""
+	app.BashComplete = func(c *cli.Context) {
+		for _, cmd := range c.App.Commands {
+			if !cmd.Hidden {
+				fmt.Fprintln(c.App.Writer, cmd.Name)
+			}
+		}
+	}
 
 	app.Flags = []cli.Flag{
-		cli.BoolFlag{Name: "debug"},
-		cli.StringFlag{Name: "server"},
-		cli.BoolFlag{Name: "use-session"},
-		cli.StringFlag{Name: "session-key"},
-		cli.IntFlag{Name: "page-size", Hidden: true, Value: snsync.DefaultPageSize},
-		cli.BoolFlag{Name: "quiet"},
-		cli.BoolFlag{Name: "no-stdout"},
+		&cli.BoolFlag{Name: "debug"},
+		&cli.StringFlag{Name: "server"},
+		&cli.BoolFlag{Name: "use-session"},
+		&cli.StringFlag{Name: "session-key"},
+		&cli.IntFlag{Name: "page-size", Hidden: true, Value: snsync.DefaultPageSize},
+		&cli.BoolFlag{Name: "quiet"},
+		&cli.BoolFlag{Name: "no-stdout"},
 	}
 	app.CommandNotFound = func(c *cli.Context, command string) {
 		_, _ = fmt.Fprintf(c.App.Writer, "\ninvalid command: \"%s\" \n\n", command)
 		cli.ShowAppHelpAndExit(c, 1)
 	}
 
-	dotfilesCmd := cli.Command{
-		Name:  "dotfiles",
-		Usage: "sync dotfiles",
-		Flags: []cli.Flag{
-			cli.StringFlag{
-				Name:  "home-dir",
-				Usage: "home directory to sync dotfiles from",
-			},
-		},
-		Subcommands: []cli.Command{
-			{
-				Name:  "add",
-				Usage: "start tracking dotfile(s)",
-				Flags: []cli.Flag{
-					cli.BoolFlag{
-						Name:  "all",
-						Usage: "add all dotfiles (non-recursive)",
-					},
-				},
-				Action: func(c *cli.Context) error {
-					return addCmdFunc(c, true, &msg, &display)
-				},
-			},
-			{
-				Name:    "remove",
-				Aliases: []string{"rm"},
-				Usage:   "stop tracking dotfile(s)",
-				Action: func(c *cli.Context) error {
-					return removeCmdFunc(c, true, &msg, &display)
-				},
-			},
-			{
-				Name:  "diff",
-				Usage: "display differences between local and remote",
-				Action: func(c *cli.Context) error {
-					return diffCmdFunc(c, true, &msg, &display)
-				},
-			},
-			{
-				Name:  "status",
-				Usage: "compare dotfiles local and remote",
-				Action: func(c *cli.Context) error {
-					return statusCmdFunc(c, true, &msg, &display)
-				},
-			},
-		},
-		Action: func(c *cli.Context) error {
-			return syncCmdFunc(c, true, &msg, &display)
-		},
-	}
-
-	statusCmd := cli.Command{
-		Name:  "status",
-		Usage: "compare local and remote",
-		Action: func(c *cli.Context) error {
-			return statusCmdFunc(c, false, &msg, &display)
-		},
-	}
-
-	syncCmd := cli.Command{
-		Name:    "dir",
-		Aliases: []string{"directory", "d"},
-		Usage:   "sync directory",
-		Flags: []cli.Flag{
-			cli.StringSliceFlag{
-				Name:  "exclude",
-				Usage: "exlude path from sync",
-			},
-		},
-		BashComplete: func(c *cli.Context) {
-			syncTasks := []string{"--exclude"}
-			for _, t := range syncTasks {
-				fmt.Println(t)
-			}
-		},
-		Action: func(c *cli.Context) error {
-			return syncCmdFunc(c, false, &msg, &display)
-		},
-	}
-
-	addCmd := cli.Command{
-		Name:  "add",
-		Usage: "upload file(s)",
-		Action: func(c *cli.Context) error {
-			return addCmdFunc(c, false, &msg, &display)
-		},
-	}
-
-	removeCmd := cli.Command{
-		Name:    "remove",
-		Aliases: []string{"rm"},
-		Usage:   "stop tracking file(s)",
-		Action: func(c *cli.Context) error {
-			return removeCmdFunc(c, false, &msg, &display)
-		},
-	}
-
-	diffCmd := cli.Command{
-		Name:  "diff",
-		Usage: "display differences between local and remote",
-		Action: func(c *cli.Context) error {
-			return diffCmdFunc(c, false, &msg, &display)
-		},
-	}
-
-	wipeCmd := cli.Command{
-		Name:  "wipe",
-		Usage: "remove all sync",
-		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "force",
-				Usage: "assume user confirmation",
-			},
-		},
-		BashComplete: func(c *cli.Context) {
-			tasks := []string{"--force"}
-			if c.NArg() > 0 {
-				return
-			}
-			for _, t := range tasks {
-				fmt.Println(t)
-			}
-		},
-		Hidden: true,
-		Action: func(c *cli.Context) error {
-			return wipeCmdFunc(c, false, &msg, &display)
-		},
-	}
-
-	sessionCmd := cli.Command{
-		Name:  "session",
-		Usage: "manage session credentials",
-		Flags: []cli.Flag{
-			cli.BoolFlag{
-				Name:  "add",
-				Usage: "add session to keychain",
-			},
-			cli.BoolFlag{
-				Name:  "remove",
-				Usage: "remove session from keychain",
-			},
-			cli.BoolFlag{
-				Name:  "status",
-				Usage: "get session details",
-			},
-			cli.StringFlag{
-				Name:     "session-key",
-				Usage:    "[optional] key to encrypt/decrypt session (enter '.' to hide key input)",
-				Required: false,
-			},
-		},
-		Hidden: false,
-		BashComplete: func(c *cli.Context) {
-			tasks := []string{"--add", "--remove", "--status", "--session-key"}
-			if c.NArg() > 0 {
-				return
-			}
-			for _, t := range tasks {
-				fmt.Println(t)
-			}
-		},
-		Action: func(c *cli.Context) error {
-			var opts configOptsOutput
-			opts, err = getOpts(c)
-			if err != nil {
-				return err
-			}
-			display = opts.display
-
-			sAdd := c.Bool("add")
-			sRemove := c.Bool("remove")
-			sStatus := c.Bool("status")
-			sessKey := c.String("session-key")
-
-			nTrue := numTrue(sAdd, sRemove, sStatus)
-			if nTrue == 0 || nTrue > 1 {
-				_ = cli.ShowCommandHelp(c, "session")
-				os.Exit(1)
-			}
-			if sAdd {
-				msg, err = session.AddSession(opts.server, sessKey, nil, c.Bool("debug"))
-				return err
-			}
-			if sRemove {
-				msg = session.RemoveSession(nil)
-				return nil
-			}
-			if sStatus {
-				msg, err = session.SessionStatus(sessKey, nil)
-			}
-			return err
-		},
-	}
-
 	app.Commands = []cli.Command{
-		statusCmd,
-		syncCmd,
-		dotfilesCmd,
-		addCmd,
-		removeCmd,
-		diffCmd,
-		sessionCmd,
-		wipeCmd,
+		statusCmd(),
+		addCmd(),
+		diffCmd(),
+		removeCmd(),
+		syncCmd(),
+		dotfilesCmd(),
+		sessionCmd(),
+		wipeCmd(),
 	}
 
-	sort.Sort(cli.FlagsByName(app.Flags))
-
-	return msg, display, app.Run(args)
+	return app
 }
 
 func numTrue(in ...bool) (total int) {

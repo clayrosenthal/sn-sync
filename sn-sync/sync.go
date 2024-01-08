@@ -19,6 +19,34 @@ var (
 	HiWhite = color.New(color.FgHiWhite).SprintFunc()
 )
 
+type SNDirSyncInput struct {
+	Session        *cache.Session
+	Root           string
+	Paths, Exclude []string
+	PageSize       int
+	Debug          bool
+}
+
+type SyncOutput struct {
+	NoPushed, NoPulled int
+	Msg                string
+}
+
+type syncInput struct {
+	db             *storm.DB
+	session        *cache.Session
+	twn            tagsWithNotes
+	root           string
+	paths, exclude []string
+	debug          bool
+	close          bool
+}
+
+type syncOutput struct {
+	noPushed, noPulled int
+	msg                string
+}
+
 // Sync compares local and remote items and then:
 // - pulls remotes if locals are older or missing
 // - pushes locals if remotes are newer
@@ -109,19 +137,6 @@ func sync(input syncInput) (output syncOutput, err error) {
 	return
 }
 
-type SNDirSyncInput struct {
-	Session        *cache.Session
-	Root           string
-	Paths, Exclude []string
-	PageSize       int
-	Debug          bool
-}
-
-type SyncOutput struct {
-	NoPushed, NoPulled int
-	Msg                string
-}
-
 func syncDBwithFS(si syncInput) (so syncOutput, err error) {
 	if si.db == nil {
 		panic("didn't get db sent to syncDBwithFS")
@@ -206,21 +221,6 @@ func syncDBwithFS(si syncInput) (so syncOutput, err error) {
 	so.msg = fmt.Sprint(columnize.SimpleFormat(res))
 
 	return so, err
-}
-
-type syncInput struct {
-	db             *storm.DB
-	session        *cache.Session
-	twn            tagsWithNotes
-	root           string
-	paths, exclude []string
-	debug          bool
-	close          bool
-}
-
-type syncOutput struct {
-	noPushed, noPulled int
-	msg                string
 }
 
 func ensureTrailingPathSep(in string) string {

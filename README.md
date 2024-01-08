@@ -74,7 +74,7 @@ sn-dotfiles --use-session --session-key <key> <command>
 ### add
 example:
 ```
-sn-dotfiles add /home/me/.file1 /home/me/.dir1/file2
+sn-sync dotfiles add /home/me/.file1 /home/me/.dir1/file2
 ```
 Add will take a copy of the specified file(s) and convert the files to Notes and each path to a Tag. The above command would generate the following structure:
 ```

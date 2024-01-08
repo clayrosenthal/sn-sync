@@ -7,6 +7,7 @@ require (
 	github.com/briandowns/spinner v1.12.0
 	github.com/fatih/color v1.16.0
 	github.com/fatih/set v0.2.1
+	github.com/gookit/color v1.5.4
 	github.com/jonhadfield/findexec v0.0.0-20190902195615-78db24cd4e77
 	github.com/jonhadfield/gosn-v2 v0.0.0-20231217230122-7ad4020ae28b
 	github.com/lithammer/shortuuid v3.0.0+incompatible
@@ -14,12 +15,12 @@ require (
 	github.com/ryanuber/columnize v2.1.2+incompatible
 	github.com/spf13/viper v1.18.1
 	github.com/stretchr/testify v1.8.4
-	github.com/urfave/cli v1.22.5
+	github.com/urfave/cli/v2 v2.27.1
 )
 
 require (
 	github.com/alessio/shellescape v1.4.2 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.0 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/danieljoos/wincred v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.2-0.20180830191138-d8f796af33cc // indirect
 	github.com/fsnotify/fsnotify v1.7.0 // indirect
@@ -45,6 +46,8 @@ require (
 	github.com/spf13/cast v1.6.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/subosito/gotenv v1.6.0 // indirect
+	github.com/xo/terminfo v0.0.0-20210125001918-ca9a967f8778 // indirect
+	github.com/xrash/smetrics v0.0.0-20201216005158-039620a65673 // indirect
 	github.com/zalando/go-keyring v0.2.3 // indirect
 	go.etcd.io/bbolt v1.3.8 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

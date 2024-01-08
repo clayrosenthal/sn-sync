@@ -489,7 +489,8 @@ func dedupe(in []string) []string {
 	return in[:j+1]
 }
 
-func tagTitleToFSDir(title, root string) (path string, err error) {
+func tagTitleToFSDir(tag items.Tag, root string, dotfile bool) (path string, err error) {
+	title := tag.Content.GetTitle()
 	if title == "" {
 		err = errors.New("tag title required")
 		return
@@ -500,11 +501,11 @@ func tagTitleToFSDir(title, root string) (path string, err error) {
 		return
 	}
 
-	if !strings.HasPrefix(title, DotFilesTag) {
+	if dotfile && !strings.HasPrefix(title, DotFilesTag) {
 		return
 	}
 
-	if title == DotFilesTag {
+	if dotfile && title == DotFilesTag {
 		return root + string(os.PathSeparator), nil
 	}
 

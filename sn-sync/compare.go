@@ -11,7 +11,7 @@ import (
 )
 
 func compare(remote tagsWithNotes, root string, paths, exclude []string, debug bool) (diffs []ItemDiff, err error) {
-	debugPrint(debug, fmt.Sprintf("compare | Home: %s", root))
+	debugPrint(debug, fmt.Sprintf("compare | Root: %s", root))
 	debugPrint(debug, fmt.Sprintf("compare | %d Paths to include supplied", len(paths)))
 	debugPrint(debug, fmt.Sprintf("compare | %d Paths to Exclude supplied", len(exclude)))
 	// fail immediately if remote or Paths are empty
@@ -53,7 +53,7 @@ func compareRemoteWithLocalFS(remote tagsWithNotes, paths []string, root string,
 
 		var dir string
 
-		dir, err = tagTitleToFSDir(twn.tag.Content.GetTitle(), root)
+		dir, err = tagTitleToFSDir(twn.tag, root)
 		if err != nil {
 			return
 		}

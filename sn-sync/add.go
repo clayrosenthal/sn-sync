@@ -16,6 +16,21 @@ import (
 	"github.com/ryanuber/columnize"
 )
 
+type AddInput struct {
+	Session  *cache.Session
+	Root     string
+	Paths    []string
+	All      bool
+	Twn      tagsWithNotes
+	PageSize int
+}
+
+type AddOutput struct {
+	TagsPushed, NotesPushed                 int
+	PathsAdded, PathsExisting, PathsInvalid []string
+	Msg                                     string
+}
+
 // Add tracks local Paths by pushing the local dir as a tag representation and the filename as a note title
 func Add(ai AddInput, useStdErr bool) (ao AddOutput, err error) {
 	// validate session
@@ -25,7 +40,7 @@ func Add(ai AddInput, useStdErr bool) (ao AddOutput, err error) {
 	}
 
 	if StringInSlice(ai.Root, []string{"/", "/home"}, true) {
-		err = errors.New(fmt.Sprintf("not a good idea to use '%s' as home dir", ai.Root))
+		err = errors.New(fmt.Sprintf("not a good idea to use '%s' as root dir", ai.Root))
 		return
 	}
 
@@ -101,21 +116,6 @@ func Add(ai AddInput, useStdErr bool) (ao AddOutput, err error) {
 	cso, err = cache.Sync(si)
 
 	return
-}
-
-type AddInput struct {
-	Session  *cache.Session
-	Root     string
-	Paths    []string
-	All      bool
-	Twn      tagsWithNotes
-	PageSize int
-}
-
-type AddOutput struct {
-	TagsPushed, NotesPushed                 int
-	PathsAdded, PathsExisting, PathsInvalid []string
-	Msg                                     string
 }
 
 func add(db *storm.DB, ai AddInput, noRecurse bool) (ao AddOutput, err error) {

@@ -14,9 +14,9 @@ import (
 
 const (
 	// SNServerURL defines the default URL for making calls to syncDBwithFS with SN
-	SNServerURL = "https://syncDBwithFS.standardnotes.org"
+	SNServerURL = "https://api.standardnotes.org"
 	// DotFilesTag defines the default tag that all SN Dotfiles will be prefixed with
-	DotFilesTag = "sync"
+	DotFilesTag = "dotfiles"
 	// DefaultPageSize defines the number of items to attempt to syncDBwithFS per request
 	DefaultPageSize = 500
 	// SpinnerCharSet defines the characters to use for the spinner shown when syncing
@@ -33,6 +33,24 @@ var (
 	green  = color.New(color.FgGreen).SprintFunc()
 	yellow = color.New(color.FgYellow).SprintFunc()
 )
+
+type tagWithNotes struct {
+	tag   items.Tag
+	notes items.Notes
+}
+
+type tagsWithNotes []tagWithNotes
+
+// GetNoteConfig defines the input for getting notes from SN
+type GetNoteConfig struct {
+	Session    cache.Session
+	Filters    items.ItemFilters
+	NoteTitles []string
+	TagTitles  []string
+	TagUUIDs   []string
+	PageSize   int
+	Debug      bool
+}
 
 func getTagsWithNotes(db *storm.DB, session *cache.Session) (t tagsWithNotes, err error) {
 	// validate session
@@ -98,22 +116,4 @@ func getItemNoteRefIds(itemRefs items.ItemReferences) (refIds []string) {
 	}
 
 	return refIds
-}
-
-type tagWithNotes struct {
-	tag   items.Tag
-	notes items.Notes
-}
-
-type tagsWithNotes []tagWithNotes
-
-// GetNoteConfig defines the input for getting notes from SN
-type GetNoteConfig struct {
-	Session    cache.Session
-	Filters    items.ItemFilters
-	NoteTitles []string
-	TagTitles  []string
-	TagUUIDs   []string
-	PageSize   int
-	Debug      bool
 }

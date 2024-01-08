@@ -23,6 +23,17 @@ const (
 	identical    = "identical"
 )
 
+// TODO: rename rootRelPath? relPath? rootRelPath?
+type ItemDiff struct {
+	tagTitle    string
+	noteTitle   string
+	path        string
+	rootRelPath string
+	diff        string
+	remote      items.Note
+	local       string
+}
+
 func Diff(session *cache.Session, root string, paths []string, pageSize int, close, useStdErr bool) (diffs []ItemDiff, msg string, err error) {
 	debugPrint(session.Debug, fmt.Sprintf("Diff | %d paths", len(paths)))
 
@@ -64,17 +75,6 @@ func Diff(session *cache.Session, root string, paths []string, pageSize int, clo
 	}
 
 	return diff(remote, root, paths, session.Debug)
-}
-
-// TODO: rename rootRelPath? relPath? rootRelPath?
-type ItemDiff struct {
-	tagTitle    string
-	noteTitle   string
-	path        string
-	rootRelPath string
-	diff        string
-	remote      items.Note
-	local       string
 }
 
 func diff(twn tagsWithNotes, root string, paths []string, debug bool) (diffs []ItemDiff, msg string, err error) {

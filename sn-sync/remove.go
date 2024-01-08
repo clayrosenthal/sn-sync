@@ -25,10 +25,15 @@ type RemoveOutput struct {
 	Msg                                   string
 }
 
+type removeInput struct {
+	session *cache.Session
+	items   items.Items
+}
+
 // Remove stops tracking local Paths by removing the related notes from SN
 func Remove(ri RemoveInput, useStdErr bool) (ro RemoveOutput, err error) {
 	if StringInSlice(ri.Root, []string{"/", "/home"}, true) {
-		err = fmt.Errorf("not a good idea to use '%s' as home dir", ri.Root)
+		err = fmt.Errorf("not a good idea to use '%s' as root dir", ri.Root)
 		return
 	}
 
@@ -163,11 +168,6 @@ func Remove(ri RemoveInput, useStdErr bool) (ro RemoveOutput, err error) {
 	ro.TagsRemoved = len(emptyTags)
 
 	return ro, err
-}
-
-type removeInput struct {
-	session *cache.Session
-	items   items.Items
 }
 
 func removeFromDB(input removeInput) error {
