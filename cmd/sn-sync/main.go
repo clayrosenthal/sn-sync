@@ -13,22 +13,23 @@ import (
 
 	"github.com/gookit/color"
 	"github.com/spf13/viper"
-	"github.com/urfave/cli/v2"
+	cli "github.com/urfave/cli/v2"
 )
 
 // overwritten at build time
 var version, versionOutput, tag, sha, buildDate string
 
 type configOptsOutput struct {
-	useStdOut  bool
-	display    bool
-	useSession bool
-	home       string
-	sessKey    string
-	server     string
-	pageSize   int
-	cacheDBDir string
-	debug      bool
+	useStdOut   bool
+	display     bool
+	useSession  bool
+	dotfiles    bool
+	dotfilesDir string
+	sessKey     string
+	server      string
+	pageSize    int
+	cacheDBDir  string
+	debug       bool
 }
 
 func printErrorMsg(c *cli.Context, err error) {
@@ -60,6 +61,9 @@ func getOpts(c *cli.Context) (out configOptsOutput, err error) {
 		out.server = viper.GetString("server")
 	}
 	out.server = c.String("server")
+	if out.server == "" {
+		out.server = snsync.SNServerURL
+	}
 
 	out.cacheDBDir = viper.GetString("cachedb_dir")
 	if out.cacheDBDir != "" {
@@ -71,12 +75,12 @@ func getOpts(c *cli.Context) (out configOptsOutput, err error) {
 		out.display = false
 	}
 
-	out.home = c.String("home-dir")
-	if out.home == "" {
-		out.home = getHome()
+	out.dotfilesDir = c.String("dotfiles-dir")
+	if out.dotfilesDir == "" {
+		out.dotfilesDir = getHome()
 	}
 
-	out.pageSize = c.GlobalInt("page-size")
+	out.pageSize = c.Int("page-size")
 
 	out.debug = viper.GetBool("debug")
 	if c.Bool("debug") {
@@ -103,35 +107,9 @@ func startCLI(args []string) (err error) {
 	return app.Run(args)
 }
 
-func appSetup() (err error) {
+func appSetup() (app *cli.App) {
 	viper.SetEnvPrefix("sn")
 	viper.AutomaticEnv()
-
-	//TODO: figure out if these can be removed, what auto env does
-	err = viper.BindEnv("email")
-	if err != nil {
-		return "", false, err
-	}
-
-	err = viper.BindEnv("password")
-	if err != nil {
-		return "", false, err
-	}
-
-	err = viper.BindEnv("server")
-	if err != nil {
-		return "", false, err
-	}
-
-	err = viper.BindEnv("debug")
-	if err != nil {
-		return "", false, err
-	}
-
-	err = viper.BindEnv("use_session")
-	if err != nil {
-		return "", false, err
-	}
 
 	if tag != "" && buildDate != "" {
 		versionOutput = fmt.Sprintf("[%s-%s] %s UTC", tag, sha, buildDate)
@@ -139,7 +117,7 @@ func appSetup() (err error) {
 		versionOutput = version
 	}
 
-	app := cli.NewApp()
+	app = cli.NewApp()
 	app.EnableBashCompletion = true
 
 	app.Name = "sn-sync"
@@ -167,26 +145,35 @@ func appSetup() (err error) {
 	}
 
 	app.Flags = []cli.Flag{
-		&cli.BoolFlag{Name: "debug"},
-		&cli.StringFlag{Name: "server"},
-		&cli.BoolFlag{Name: "use-session"},
+		&cli.BoolFlag{Name: "debug", Value: viper.GetBool("debug")},
+		&cli.StringFlag{Name: "server", Value: viper.GetString("server")},
+		&cli.BoolFlag{Name: "use-session", Value: viper.GetBool("use_session")},
 		&cli.StringFlag{Name: "session-key"},
 		&cli.IntFlag{Name: "page-size", Hidden: true, Value: snsync.DefaultPageSize},
-		&cli.BoolFlag{Name: "quiet"},
-		&cli.BoolFlag{Name: "no-stdout"},
+		&cli.BoolFlag{Name: "quiet", Value: viper.GetBool("quiet")},
+		&cli.BoolFlag{Name: "no-stdout", Hidden: true},
+		&cli.StringFlag{
+			Name:  "dotfiles-dir",
+			Usage: "home directory to sync dotfiles from",
+			Value: viper.GetString("dotfiles_dir"),
+		},
+		&cli.BoolFlag{
+			Name:  "dotfiles",
+			Usage: "dotfiles mode, sync dotfiles",
+			Value: viper.GetBool("dotfiles"),
+		},
 	}
 	app.CommandNotFound = func(c *cli.Context, command string) {
 		_, _ = fmt.Fprintf(c.App.Writer, "\ninvalid command: \"%s\" \n\n", command)
 		cli.ShowAppHelpAndExit(c, 1)
 	}
 
-	app.Commands = []cli.Command{
+	app.Commands = []*cli.Command{
 		statusCmd(),
 		addCmd(),
 		diffCmd(),
 		removeCmd(),
 		syncCmd(),
-		dotfilesCmd(),
 		sessionCmd(),
 		wipeCmd(),
 	}
@@ -247,4 +234,15 @@ func isValidDotfilePath(path string) bool {
 	}
 
 	return strings.HasPrefix(homeRelPath, ".")
+}
+
+func getRootAndPaths(c *cli.Context, opts configOptsOutput) (root string, paths []string) {
+	if opts.dotfiles {
+		root = opts.dotfilesDir
+		paths = c.Args().Slice()
+	} else {
+		root = c.Args().Get(0)
+		paths = c.Args().Tail()
+	}
+	return
 }

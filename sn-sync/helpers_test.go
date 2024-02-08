@@ -48,18 +48,18 @@ func TestGetAllTagsWithoutNotes(t *testing.T) {
 func TestTagTitleToFSDIR(t *testing.T) {
 	home := getTemporaryHome()
 	// missing Home should return err
-	p, err := tagTitleToFSDir(fmt.Sprintf("%s.fruit.lemon", DotFilesTag), "")
+	p, err := tagTitleToFSDir(fmt.Sprintf("%s.fruit.lemon", DotFilesTag, true), "")
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "home directory required")
 	assert.Empty(t, p)
 
 	// check result for supplied title and Home
-	p, err = tagTitleToFSDir(DotFilesTag, home)
+	p, err = tagTitleToFSDir(DotFilesTag, home, true)
 	assert.NoError(t, err)
 	assert.Equal(t, fmt.Sprintf("%s/", home), p)
 
 	// missing title should generate error
-	p, err = tagTitleToFSDir("", home)
+	p, err = tagTitleToFSDir("", home, true)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "tag title required")
 	assert.Equal(t, "", p)

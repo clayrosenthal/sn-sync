@@ -428,9 +428,8 @@ func getNotesToRemove(path, root string, twn tagsWithNotes, debug bool) (rootRel
 
 		// find notes matching tag
 		for _, t := range twn {
-			tagTitle := t.tag.Content.GetTitle()
 			var tp string
-			tp, err = tagTitleToFSDir(tagTitle, root)
+			tp, err = tagTitleToFSDir(t.tag, root, false)
 			if err != nil {
 				return
 			}

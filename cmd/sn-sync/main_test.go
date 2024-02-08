@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
 	"index/suffixarray"
 	"os"
@@ -17,6 +18,7 @@ import (
 	"github.com/jonhadfield/gosn-v2/items"
 	"github.com/spf13/viper"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func removeDB(dbPath string) {
@@ -104,10 +106,16 @@ func TestMain(m *testing.M) {
 }
 
 func TestCLIInvalidCommand(t *testing.T) {
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
+	require.NoError(t, app.Run([]string{"sncli", "get", "tag", "--title", "missing tag"}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
 	// Run the crashing code when FLAG is set
 	if os.Getenv("FLAG") == "1" {
-		msg, display, err := startCLI([]string{"sn-sync", "lemon"})
-		fmt.Println(msg, display, err)
+		require.NoError(t, app.Run([]string{"sn-sync", "lemon"}))
 		return
 	}
 	// Run the test in a subprocess
@@ -163,37 +171,47 @@ func TestAdd(t *testing.T) {
 	applePath := fmt.Sprintf("%s/.fruit/apple", home)
 	fwc[applePath] = "apple content"
 	assert.NoError(t, createTemporaryFiles(fwc))
-	var msg string
-	var disp bool
-	msg, disp, err = startCLI([]string{"sn-sync", "add", applePath})
-	assert.NotEmpty(t, msg)
-	assert.True(t, disp)
-	assert.NoError(t, err)
-	assert.Regexp(t, regexp.MustCompile(".fruit/apple\\s*now tracked"), msg)
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
+	require.NoError(t, app.Run([]string{"sn-sync", "add", applePath}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Regexp(t, regexp.MustCompile(".fruit/apple\\s*now tracked"), stdout)
 }
 
 func TestAddInvalidPath(t *testing.T) {
-	msg, disp, err := startCLI([]string{"sn-sync", "add", "/invalid"})
-	assert.NotEmpty(t, msg)
-	assert.True(t, disp)
-	assert.Contains(t, msg, "invalid")
-	assert.NoError(t, err)
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
+	require.NoError(t, app.Run([]string{"sn-sync", "add", "/invalid"}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Contains(t, stdout, "invalid")
 }
 
 func TestAddAllAndPath(t *testing.T) {
-	msg, disp, err := startCLI([]string{"sn-sync", "add", "--all", "/invalid"})
-	assert.NotEmpty(t, msg)
-	assert.True(t, disp)
-	assert.Contains(t, msg, "error: specifying --all and paths does not make sense")
-	assert.NoError(t, err)
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
+	require.NoError(t, app.Run([]string{"sn-sync", "add", "--all", "/invalid"}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Contains(t, stdout, "error: specifying --all and paths does not make sense")
 }
 
 func TestAddNoArgs(t *testing.T) {
-	msg, disp, err := startCLI([]string{"sn-sync", "add"})
-	assert.NotEmpty(t, msg)
-	assert.True(t, disp)
-	assert.Contains(t, msg, "error: either specify paths to add or --all to add everything")
-	assert.NoError(t, err)
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
+	require.NoError(t, app.Run([]string{"sn-sync", "add"}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Contains(t, stdout, "error: either specify paths to add or --all to add everything")
 }
 
 func TestRemove(t *testing.T) {
@@ -214,13 +232,19 @@ func TestRemove(t *testing.T) {
 		}
 	}()
 
-	msg, disp, err := startCLI([]string{"sn-sync", "add", fmt.Sprintf("%s/.fruit", home)})
-	assert.NoError(t, err)
-	msg, disp, err = startCLI([]string{"sn-sync", "remove", fmt.Sprintf("%s/.fruit", home)})
-	assert.NoError(t, err)
-	assert.NotEmpty(t, msg)
-	assert.Regexp(t, regexp.MustCompile(".fruit/apple\\s*removed"), msg)
-	assert.True(t, disp)
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
+	require.NoError(t, app.Run([]string{"sn-sync", "add", fmt.Sprintf("%s/.fruit", home)}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
+
+	require.NoError(t, app.Run([]string{"sn-sync", "remove", fmt.Sprintf("%s/.fruit", home)}))
+	stdout = outputBuffer.String()
+	fmt.Println(stdout)
+
+	assert.Regexp(t, regexp.MustCompile(".fruit/apple\\s*removed"), stdout)
 }
 
 func TestWipe(t *testing.T) {
@@ -247,13 +271,15 @@ func TestWipe(t *testing.T) {
 	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
 	_, err := snsync.Add(ai, true)
 	assert.NoError(t, err)
-	var msg string
-	var disp bool
 	time.Sleep(time.Second * 1)
-	msg, disp, err = startCLI([]string{"sn-sync", "wipe", "--force"})
-	assert.NoError(t, err)
-	assert.Contains(t, msg, "3 ")
-	assert.True(t, disp)
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
+	require.NoError(t, app.Run([]string{"sn-sync", "wipe", "--force"}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Contains(t, stdout, "3 ")
 }
 
 func TestStatus(t *testing.T) {
@@ -261,6 +287,10 @@ func TestStatus(t *testing.T) {
 	assert.NoError(t, viper.BindEnv("email"))
 	assert.NoError(t, viper.BindEnv("password"))
 	assert.NoError(t, viper.BindEnv("server"))
+
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
 
 	home := getHome()
 	fwc := make(map[string]string)
@@ -280,12 +310,10 @@ func TestStatus(t *testing.T) {
 	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
 	_, err = snsync.Add(ai, true)
 	assert.NoError(t, err)
-	var msg string
-	var disp bool
-	msg, disp, err = startCLI([]string{"sn-sync", "status", applePath})
-	assert.NoError(t, err)
-	assert.Contains(t, msg, ".fruit/apple  identical")
-	assert.True(t, disp)
+	require.NoError(t, app.Run([]string{"sn-sync", "status", applePath}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Contains(t, stdout, ".fruit/apple  identical")
 }
 
 func TestSync(t *testing.T) {
@@ -315,38 +343,45 @@ func TestSync(t *testing.T) {
 	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath, lemonPath}}
 	_, err = snsync.Add(ai, true)
 	assert.NoError(t, err)
-	var msg string
-	var disp bool
-	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
-	assert.NoError(t, err)
-	assert.Contains(t, msg, "nothing to do")
-	assert.True(t, disp)
+
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
+	require.NoError(t, app.Run([]string{"sn-sync", "--debug", "sync", applePath}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Contains(t, stdout, "nothing to do")
 	// test push
 	fwc[applePath] = "apple content updated"
 	// add delay so local file is recognised as newer
 	time.Sleep(1 * time.Second)
 	assert.NoError(t, createTemporaryFiles(fwc))
-	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
-	assert.NoError(t, err)
-	assert.Contains(t, msg, "pushed")
+	require.NoError(t, app.Run([]string{"sn-sync", "--debug", "sync", applePath}))
+	stdout = outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Contains(t, stdout, "pushed")
 	// test pull - specify unchanged path and expect no change
 	err = os.Remove(lemonPath)
 	assert.NoError(t, err)
-	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
-	assert.NoError(t, err)
-	assert.Contains(t, msg, "nothing to do")
+	require.NoError(t, app.Run([]string{"sn-sync", "--debug", "sync", applePath}))
+	stdout = outputBuffer.String()
+	fmt.Println(stdout)
+	assert.Contains(t, stdout, "nothing to do")
 	// test pull - specify changed path (updated content set to be older) and expect change
-	assert.NoError(t, err)
 
 	fwc[lemonPath] = "lemon content updated"
 	assert.NoError(t, createTemporaryFiles(fwc))
 
 	tenMinsAgo := time.Now().Add(-time.Minute * 10)
 	err = os.Chtimes(lemonPath, tenMinsAgo, tenMinsAgo)
-	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", lemonPath})
+	assert.NoError(t, err)
+	require.NoError(t, app.Run([]string{"sn-sync", "--debug", "sync", lemonPath}))
+	stdout = outputBuffer.String()
+	fmt.Println(stdout)
 	assert.NoError(t, err)
 	r := regexp.MustCompile("pulled")
-	index := suffixarray.New([]byte(msg))
+	index := suffixarray.New([]byte(stdout))
 	results := index.FindAllIndex(r, -1)
 	assert.Len(t, results, 1)
 }
@@ -374,15 +409,20 @@ func TestDiff(t *testing.T) {
 	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
 	_, err := snsync.Add(ai, true)
 	assert.NoError(t, err)
-	var msg string
-	var disp bool
-	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "diff", applePath})
+
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+	require.NoError(t, app.Run([]string{"sn-sync", "--debug", "diff", applePath}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
 	assert.NoError(t, err)
-	assert.NotEmpty(t, msg)
-	assert.Contains(t, msg, "no differences")
-	assert.True(t, disp)
-	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "diff", "~/.does/not/exist"})
-	assert.Error(t, err)
+	assert.NotEmpty(t, stdout)
+	assert.Contains(t, stdout, "no differences")
+	require.Error(t, app.Run([]string{"sn-sync", "--debug", "diff", "~/.does/not/exist"}))
+	stdout = outputBuffer.String()
+	fmt.Println(stdout)
+	// might need a fix
 	assert.Contains(t, err.Error(), "no such file")
 }
 
@@ -407,22 +447,27 @@ func TestSyncExclude(t *testing.T) {
 		}
 	}()
 
+	var outputBuffer bytes.Buffer
+	app := appSetup()
+	app.Writer = &outputBuffer
+
 	ai := snsync.AddInput{Session: testCacheSession, Home: home, Paths: []string{applePath}}
 	_, err := snsync.Add(ai, true)
 	assert.NoError(t, err)
-	var msg string
-	var disp bool
-	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
+	require.NoError(t, app.Run([]string{"sn-sync", "--debug", "sync", applePath}))
+	stdout := outputBuffer.String()
+	fmt.Println(stdout)
 	assert.NoError(t, err)
-	assert.Contains(t, msg, "nothing to do")
-	assert.True(t, disp)
+	assert.Contains(t, stdout, "nothing to do")
 	fwc[applePath] = "apple content updated"
 	// add delay so local file is recognised as newer
 	time.Sleep(1 * time.Second)
 	assert.NoError(t, createTemporaryFiles(fwc))
-	msg, disp, err = startCLI([]string{"sn-sync", "--debug", "sync", applePath})
+	require.NoError(t, app.Run([]string{"sn-sync", "--debug", "sync", applePath}))
+	stdout = outputBuffer.String()
+	fmt.Println(stdout)
 	assert.NoError(t, err)
-	assert.Contains(t, msg, "pushed")
+	assert.Contains(t, stdout, "pushed")
 }
 
 func TestNumTrue(t *testing.T) {
